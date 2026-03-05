@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
+# Platform-specific wrapper — delegates to shared script.
 set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-
-cd "${ROOT_DIR}"
-docker compose down
-echo "App has been stopped."
+exec "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/stop.sh"

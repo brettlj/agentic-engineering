@@ -33,7 +33,9 @@ export default function Home() {
           return;
         }
       } catch {
-        // Keep user on login form if session check fails.
+        if (isActive) {
+          setError("Unable to reach the server. Please try again.");
+        }
       } finally {
         if (isActive) {
           setIsLoading(false);

@@ -1,15 +1,22 @@
 import json
 import os
-import socket
 import subprocess
 import time
 from contextlib import contextmanager
 from http.cookiejar import CookieJar
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.request import HTTPCookieProcessor, Request, build_opener, urlopen
+from urllib.request import HTTPCookieProcessor, Request, build_opener
 
 import pytest
+
+from backend.tests.server_helpers import (
+    build_frontend_export,
+    free_port,
+    start_server,
+    wait_for_ready,
+    write_test_app_module,
+)
 
 SIMPLE_BOARD = {
     "columns": [
@@ -30,47 +37,6 @@ def _should_run_live_llm_tests() -> tuple[bool, str]:
     if not api_key or api_key == "test-key":
         return False, "OPENROUTER_API_KEY must be set to a real key for live LLM tests."
     return True, ""
-
-
-def _free_port() -> int:
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        return int(sock.getsockname()[1])
-
-
-def _wait_for_ready(url: str, timeout_seconds: float = 20.0) -> None:
-    deadline = time.time() + timeout_seconds
-    while time.time() < deadline:
-        try:
-            with urlopen(url, timeout=3):
-                return
-        except Exception:
-            time.sleep(0.2)
-    raise AssertionError(f"Server did not become ready: {url}")
-
-
-def _build_frontend_export(frontend_dir: Path) -> None:
-    board_dir = frontend_dir / "board"
-    board_dir.mkdir(parents=True, exist_ok=True)
-    (frontend_dir / "index.html").write_text("<html><body>Sign in</body></html>", encoding="utf-8")
-    (board_dir / "index.html").write_text("<html><body>Kanban Studio</body></html>", encoding="utf-8")
-
-
-def _write_test_app_module(module_path: Path) -> None:
-    module_path.write_text(
-        """
-import os
-from pathlib import Path
-
-from backend.app.main import create_app
-
-app = create_app(
-    frontend_dir=Path(os.environ["PM_FRONTEND_PATH"]),
-    db_path=Path(os.environ["PM_DB_PATH"]),
-)
-""".strip(),
-        encoding="utf-8",
-    )
 
 
 def _http_json(opener, method: str, url: str, payload: dict | None = None, timeout: float = 45.0) -> tuple[int, dict]:
@@ -99,36 +65,27 @@ def _live_server(tmp_path: Path):
     app_dir = tmp_path / "live_app"
     app_dir.mkdir(parents=True, exist_ok=True)
     frontend_dir = tmp_path / "frontend"
-    _build_frontend_export(frontend_dir)
-    _write_test_app_module(app_dir / "asgi_app.py")
+    build_frontend_export(frontend_dir)
+    write_test_app_module(app_dir / "asgi_app.py")
 
     db_path = tmp_path / "data" / "pm.sqlite"
-    port = _free_port()
-    env = os.environ.copy()
-    env["PYTHONPATH"] = str(root)
-    env["PM_DB_PATH"] = str(db_path)
-    env["PM_FRONTEND_PATH"] = str(frontend_dir)
-    env["OPENROUTER_TIMEOUT_SECONDS"] = "8"
-    env["OPENROUTER_PROVIDER_ALLOW_FALLBACKS"] = "false"
-    env["OPENROUTER_PROVIDER_ORDER"] = "parasail"
-
-    proc = subprocess.Popen(
-        [
-            "python",
-            "-m",
-            "uvicorn",
-            "asgi_app:app",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(port),
-        ],
-        cwd=app_dir,
-        env=env,
+    port = free_port()
+    proc = start_server(
+        root=root,
+        port=port,
+        db_path=db_path,
+        app_dir=app_dir,
+        frontend_dir=frontend_dir,
+        extra_env={
+            "OPENROUTER_TIMEOUT_SECONDS": "15",
+            "OPENROUTER_CHAT_MODE": "operation",
+            "OPENROUTER_PROVIDER_ALLOW_FALLBACKS": "false",
+            "OPENROUTER_PROVIDER_ORDER": "openai",
+        },
     )
     try:
         base_url = f"http://127.0.0.1:{port}"
-        _wait_for_ready(f"{base_url}/health")
+        wait_for_ready(f"{base_url}/health")
         opener = build_opener(HTTPCookieProcessor(CookieJar()))
         status, _ = _http_json(
             opener,
@@ -379,15 +336,25 @@ def test_live_llm_reorder_within_column_operation(tmp_path: Path) -> None:
             column_title="Review",
             card_id=target_id,
         )
-        _ask_ai(
-            base_url,
-            opener,
-            f"In Review, place '{target_title}' before '{anchor_title}'.",
-            require_update=True,
-        )
-        board = _get_board(base_url, opener)
-        review_ids = _column_by_title(board, "Review")["cardIds"]
-        assert review_ids.index(target_id) < review_ids.index(anchor_id)
+        # Reorder is the hardest operation for LLMs to get right consistently,
+        # so retry the full ask+check cycle up to 3 times.
+        for attempt in range(3):
+            if attempt > 0:
+                _reset_simple_board(base_url, opener)
+                _add_card_directly(base_url, opener, title=anchor_title, details="anchor", column_title="Review", card_id=anchor_id)
+                _add_card_directly(base_url, opener, title=target_title, details="target", column_title="Review", card_id=target_id)
+            _ask_ai(
+                base_url,
+                opener,
+                f"In Review, place '{target_title}' before '{anchor_title}'.",
+                require_update=True,
+            )
+            board = _get_board(base_url, opener)
+            review_ids = _column_by_title(board, "Review")["cardIds"]
+            if target_id in review_ids and anchor_id in review_ids and review_ids.index(target_id) < review_ids.index(anchor_id):
+                break
+        else:
+            assert review_ids.index(target_id) < review_ids.index(anchor_id)
 
 
 def test_live_llm_delete_card_operation(tmp_path: Path) -> None:

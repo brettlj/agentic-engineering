@@ -13,7 +13,7 @@ OPENROUTER_MODEL=openai/gpt-4o-mini
 # Optional chat mode:
 # - board_snapshot (model returns full board_update snapshot)
 # - operation (model returns structured operation; backend applies update server-side)
-OPENROUTER_CHAT_MODE=board_snapshot
+OPENROUTER_CHAT_MODE=operation
 # Optional provider routing controls (OpenRouter)
 OPENROUTER_PROVIDER_REQUIRE_PARAMETERS=true
 OPENROUTER_PROVIDER_ALLOW_FALLBACKS=true
@@ -52,6 +52,17 @@ When running:
 - `PUT http://127.0.0.1:8000/api/board` (requires auth cookie)
 - `GET http://127.0.0.1:8000/api/ai/connectivity` (requires auth cookie; runs live OpenRouter `2+2` check)
 - `POST http://127.0.0.1:8000/api/ai/chat` (requires auth cookie; sends board + question + conversation history to AI and may return persisted board update)
+
+## API Error Responses
+
+All JSON error responses use the shape `{"detail": "..."}`.
+
+| Status | Meaning | Returned by |
+|--------|---------|-------------|
+| 401 | Missing or invalid session cookie | All `/api/*` routes except `/api/hello` |
+| 409 | Board version conflict (optimistic lock) | `PUT /api/board` |
+| 429 | Too many login attempts (rate limited) | `POST /api/auth/login` |
+| 502 | Upstream AI provider error | `POST /api/ai/chat`, `GET /api/ai/connectivity` |
 
 ## Tests
 

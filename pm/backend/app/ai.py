@@ -10,11 +10,12 @@ from urllib import error, request
 from pydantic import BaseModel, Field, ValidationError
 
 from backend.app.board import BoardPayload, CardPayload
+from backend.app.prompts import BOARD_SNAPSHOT_SYSTEM_PROMPT, OPERATION_SYSTEM_PROMPT
 
 OPENROUTER_CHAT_COMPLETIONS_URL = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_MODEL = "openai/gpt-4o-mini"
 DEFAULT_TIMEOUT_SECONDS = 15.0
-DEFAULT_CHAT_MODE = "board_snapshot"
+DEFAULT_CHAT_MODE = "operation"
 
 
 class OpenRouterClientError(Exception):
@@ -61,7 +62,7 @@ class OpenRouterConfig:
     provider_sort: str | None = None
     provider_allow_fallbacks: bool | None = False
     provider_require_parameters: bool = True
-    provider_order: tuple[str, ...] = ("parasail", "siliconflow")
+    provider_order: tuple[str, ...] = ("openai",)
 
     @classmethod
     def from_env(cls) -> "OpenRouterConfig":
@@ -109,7 +110,7 @@ class OpenRouterConfig:
                 item.strip() for item in provider_order_raw.split(",") if item.strip()
             )
         else:
-            provider_order = ("parasail", "siliconflow")
+            provider_order = ("openai",)
 
         return cls(
             api_key=api_key,
@@ -293,9 +294,6 @@ class OpenRouterClient:
         )
 
     def _post_chat_completions(self, payload: dict[str, Any]) -> dict[str, Any]:
-        payload = {
-            **payload,
-        }
         body = json.dumps(payload).encode("utf-8")
         req = request.Request(
             OPENROUTER_CHAT_COMPLETIONS_URL,
@@ -365,83 +363,8 @@ def build_board_chat_messages(
         "user_question": question,
     }
     return [
-        {
-            "role": "system",
-            "content": (
-                "You are an assistant for a kanban board application. "
-                "Return ONLY valid JSON with exactly these keys: assistant_message, "
-                "should_update_board, and board_update. Do not output markdown, code fences, "
-                "or any keys outside this schema. "
-                "First classify intent internally as one of: create_card, update_card_title, "
-                "update_card_details, move_card, reorder_card_within_column, delete_card, "
-                "or no_change. "
-                "For any non-no_change intent, if the request is unambiguous, set "
-                "should_update_board=true and return board_update as a full valid board snapshot. "
-                "For no_change or ambiguous requests, set should_update_board=false and "
-                "board_update=null, and use assistant_message to ask a precise clarification. "
-                "assistant_message is REQUIRED and must always be a non-empty plain-English sentence. "
-                "Never omit assistant_message, never set it to null, and never leave it blank. "
-                "Your output root MUST be a single JSON object (not a string, not an array). "
-                "The response MUST start with '{' and end with '}'. "
-                "assistant_message must be plain text without markdown or control characters. "
-                "Entity resolution order: exact title match, then case-insensitive title match, "
-                "then conversation-history references like 'it' or 'that card'. If multiple "
-                "entities still match, ask for clarification instead of guessing. "
-                "For new cards, generate compact IDs only. Use format card-<suffix> where suffix "
-                "is short lowercase alphanumeric (for example card-9 or card-new-1). "
-                "Card IDs must be <= 32 characters and never include long random strings. "
-                "When building board_update, start from the provided board and copy it completely, "
-                "then apply only the requested edit. Never return partial board fragments. "
-                "board_update must include every existing column object with id/title/cardIds; "
-                "do not drop columns, do not rename untouched columns, and do not invent placeholder "
-                "values like 'none'. cardIds must be an array of string card IDs only. "
-                "board_update.cards must include every card that remains on the board after the "
-                "edit, with full id/title/details fields for each card. "
-                "Never output placeholder markers such as '...', '??', '<...>', or partial/truncated "
-                "objects. Output complete concrete JSON only. "
-                "When building board_update, preserve all unchanged data and enforce invariants: "
-                "every cardIds entry exists in cards, no orphaned cards, no duplicate card id in a "
-                "column, and every card includes id/title/details. "
-                "Operation rules: create appends to target column unless user specifies position; "
-                "move removes from source and inserts in target; reorder changes order within target "
-                "scope only; update_title/details edits only requested fields; delete removes card "
-                "from cards and from every column.cardIds list. "
-                "For these unambiguous instruction patterns, you should update the board (set "
-                "should_update_board=true): "
-                "\"Create a new card titled 'X' in Y with details 'Z'\", "
-                "\"Rename card 'X' to 'Y'\", "
-                "\"Update details for card 'X' to 'Y'\", "
-                "\"Move card 'X' to Y\", "
-                "\"In Y, place 'X' before 'Z'\", "
-                "\"Delete card 'X'\". "
-                "If a referenced card/column is missing, do not update the board and ask for "
-                "clarification in assistant_message. "
-                "Do not claim an action was completed unless should_update_board=true and "
-                "board_update actually contains that change. "
-                "If should_update_board=false, assistant_message must clearly say no board changes "
-                "were made (or request clarification). "
-                "For any unambiguous create/move/reorder/rename/update-details/delete instruction, "
-                "you MUST set should_update_board=true and return the updated full board snapshot. "
-                "JSON response template: "
-                "{\"assistant_message\":\"...\",\"should_update_board\":true,\"board_update\":{...full board...}} "
-                "or "
-                "{\"assistant_message\":\"...\",\"should_update_board\":false,\"board_update\":null}. "
-                "Before you finalize output, verify the three required keys exist and assistant_message is non-empty. "
-                "Create example on an empty board: "
-                "{\"assistant_message\":\"Created card X in Backlog.\",\"should_update_board\":true,"
-                "\"board_update\":{\"columns\":["
-                "{\"id\":\"col-backlog\",\"title\":\"Backlog\",\"cardIds\":[\"card-new-1\"]},"
-                "{\"id\":\"col-discovery\",\"title\":\"Discovery\",\"cardIds\":[]},"
-                "{\"id\":\"col-progress\",\"title\":\"In Progress\",\"cardIds\":[]},"
-                "{\"id\":\"col-review\",\"title\":\"Review\",\"cardIds\":[]},"
-                "{\"id\":\"col-done\",\"title\":\"Done\",\"cardIds\":[]}],"
-                "\"cards\":{\"card-new-1\":{\"id\":\"card-new-1\",\"title\":\"X\",\"details\":\"Y\"}}}}."
-            ),
-        },
-        {
-            "role": "user",
-            "content": json.dumps(context_payload, ensure_ascii=True),
-        },
+        {"role": "system", "content": BOARD_SNAPSHOT_SYSTEM_PROMPT},
+        {"role": "user", "content": json.dumps(context_payload, ensure_ascii=True)},
     ]
 
 
@@ -456,32 +379,8 @@ def build_board_operation_messages(
         "user_question": question,
     }
     return [
-        {
-            "role": "system",
-            "content": (
-                "You are an assistant for a kanban board application. "
-                "Return ONLY valid JSON with exactly these keys: assistant_message, "
-                "should_update_board, and operation. "
-                "assistant_message must be natural-language text for the end user. "
-                "operation must be null if should_update_board=false. "
-                "operation must be an object if should_update_board=true. "
-                "Never return board snapshots or any keys outside this schema. "
-                "Allowed operation.intent values: create_card, update_card_title, "
-                "update_card_details, move_card, reorder_card_within_column, delete_card, "
-                "or no_change. "
-                "Use fields as needed: create_title, create_details, card_title, new_title, "
-                "new_details, target_column_title, before_card_title. "
-                "For unambiguous action requests, set should_update_board=true and return "
-                "a concrete operation object. "
-                "For ambiguous requests, set should_update_board=false, operation=null, and "
-                "ask a brief clarification in assistant_message. "
-                "Do not claim you performed an action unless should_update_board=true."
-            ),
-        },
-        {
-            "role": "user",
-            "content": json.dumps(context_payload, ensure_ascii=True),
-        },
+        {"role": "system", "content": OPERATION_SYSTEM_PROMPT},
+        {"role": "user", "content": json.dumps(context_payload, ensure_ascii=True)},
     ]
 
 
@@ -534,7 +433,12 @@ def structured_ai_operation_schema() -> dict[str, Any]:
 
 
 def structured_ai_response_schema() -> dict[str, Any]:
-    board_schema = BoardPayload.model_json_schema()
+    # board_update is intentionally permissive (any object or null) because
+    # OpenRouter strict mode rejects deeply nested schemas with dynamic keys
+    # like the cards dict. Validation happens post-hoc in _normalize_structured_response.
+    # Prefer the "operation" chat mode (structured_ai_operation_schema) which has
+    # a fully specified schema. board_snapshot mode is maintained for compatibility
+    # but is not the recommended default.
     return {
         "type": "object",
         "additionalProperties": False,
@@ -544,25 +448,6 @@ def structured_ai_response_schema() -> dict[str, Any]:
             "board_update": {"type": ["object", "null"]},
         },
         "required": ["assistant_message", "should_update_board", "board_update"],
-        "allOf": [
-            {
-                "if": {
-                    "properties": {"should_update_board": {"const": True}},
-                    "required": ["should_update_board"],
-                },
-                "then": {
-                    "properties": {"board_update": board_schema},
-                    "required": ["board_update"],
-                },
-            },
-            {
-                "if": {
-                    "properties": {"should_update_board": {"const": False}},
-                    "required": ["should_update_board"],
-                },
-                "then": {"properties": {"board_update": {"type": "null"}}},
-            },
-        ],
     }
 
 
@@ -779,6 +664,16 @@ def _resolve_card_id_by_title(board: BoardPayload, title: str | None) -> str | N
     ]
     if len(casefold_matches) == 1:
         return casefold_matches[0]
+
+    # LLMs sometimes append JSON artifacts to string fields; try prefix matching.
+    prefix_matches = [
+        card_id
+        for card_id, card in board.cards.items()
+        if lowered.startswith(card.title.lower()) and len(card.title) >= 2
+    ]
+    if len(prefix_matches) == 1:
+        return prefix_matches[0]
+
     return None
 
 
@@ -801,6 +696,16 @@ def _resolve_column_index(board: BoardPayload, title: str | None) -> int | None:
     ]
     if len(casefold_matches) == 1:
         return casefold_matches[0]
+
+    # LLMs sometimes append JSON artifacts to string fields; try prefix matching.
+    prefix_matches = [
+        idx
+        for idx, column in enumerate(board.columns)
+        if lowered.startswith(column.title.lower()) and len(column.title) >= 2
+    ]
+    if len(prefix_matches) == 1:
+        return prefix_matches[0]
+
     return None
 
 
@@ -819,12 +724,13 @@ def _generate_card_id(board: BoardPayload, title: str) -> str:
     base = base[:20]
 
     suffix = 1
-    while True:
+    for _ in range(1000):
         candidate = f"card-{base}-{suffix}"
         candidate = candidate[:32]
         if candidate not in board.cards:
             return candidate
         suffix += 1
+    raise RuntimeError(f"Unable to generate unique card ID for base '{base}' after 1000 attempts.")
 
 
 def _question_requests_action(question: str) -> bool:

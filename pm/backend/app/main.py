@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from backend.app.ai import OpenRouterClient, OpenRouterClientError, StructuredAIResponse
 from backend.app.auth import (
     SESSION_COOKIE_NAME,
+    LoginRateLimiter,
     clear_session,
     create_session,
     credentials_are_valid,
@@ -57,7 +58,8 @@ def create_app(
     ai_client: OpenRouterClient | None = None,
 ) -> FastAPI:
     app = FastAPI(title="Project Management MVP API")
-    app.state.sessions: dict[str, str] = {}
+    app.state.sessions = {}
+    app.state.login_limiter = LoginRateLimiter()
     app.state.db_path = db_path or Path(os.environ.get("PM_DB_PATH", str(DEFAULT_DB_PATH)))
     initialize_database(app.state.db_path)
     app.state.ai_client = ai_client or OpenRouterClient.from_env()
@@ -77,7 +79,10 @@ def create_app(
         return {"authenticated": username is not None, "username": username}
 
     @app.post("/api/auth/login")
-    def login(payload: LoginRequest) -> JSONResponse:
+    def login(request: Request, payload: LoginRequest) -> JSONResponse:
+        client_ip = request.client.host if request.client else "unknown"
+        if not app.state.login_limiter.is_allowed(client_ip):
+            raise HTTPException(status_code=429, detail="Too many login attempts. Try again later.")
         if not credentials_are_valid(payload.username, payload.password):
             raise HTTPException(status_code=401, detail="Invalid credentials.")
 
@@ -145,6 +150,10 @@ def create_app(
 
         return AIConnectivityResponse(model=app.state.ai_client.model, output=output)
 
+    # NOTE: AI routes use sync handlers with blocking urllib calls. FastAPI runs
+    # these in a thread pool, so each in-flight AI request holds a thread for up to
+    # the configured timeout. Acceptable for MVP single-user use; for concurrent
+    # load, convert to async with an async HTTP client.
     @app.post("/api/ai/chat")
     def ai_chat(request: Request, payload: AIChatRequest) -> AIChatResponse:
         username = require_authenticated_username(request)

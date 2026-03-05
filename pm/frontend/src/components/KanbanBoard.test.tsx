@@ -141,6 +141,11 @@ describe("KanbanBoard", () => {
     });
     await userEvent.click(deleteButton);
 
+    const confirmButton = within(column).getByRole("button", {
+      name: /confirm delete new card/i,
+    });
+    await userEvent.click(confirmButton);
+
     expect(within(column).queryByText("New card")).not.toBeInTheDocument();
   });
 

@@ -13,7 +13,7 @@ def test_credentials_validation() -> None:
 
 
 def test_create_and_clear_session() -> None:
-    sessions: dict[str, str] = {}
+    sessions = {}
     state = create_session(sessions, "user")
 
     assert state["token"] in sessions

@@ -129,20 +129,35 @@ def write_board(
     with _connect(db_path) as connection:
         user_id = _resolve_user_id(connection, username)
         _ensure_user_board(connection, user_id)
+
+        if expected_version is not None:
+            cursor = connection.execute(
+                """
+                UPDATE kanban_boards
+                SET board_json = ?, board_version = board_version + 1, updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ? AND board_version = ?
+                """,
+                (board.model_dump_json(), user_id, expected_version),
+            )
+            if cursor.rowcount == 0:
+                row = connection.execute(
+                    "SELECT board_version FROM kanban_boards WHERE user_id = ?",
+                    (user_id,),
+                ).fetchone()
+                current_version = int(row["board_version"]) if row else 0
+                raise BoardVersionConflict(
+                    f"Version mismatch. Expected {expected_version}, found {current_version}."
+                )
+            connection.commit()
+            return expected_version + 1
+
         row = connection.execute(
             "SELECT board_version FROM kanban_boards WHERE user_id = ?",
             (user_id,),
         ).fetchone()
         if row is None:
             raise RuntimeError("Board row missing after ensure step.")
-
-        current_version = int(row["board_version"])
-        if expected_version is not None and expected_version != current_version:
-            raise BoardVersionConflict(
-                f"Version mismatch. Expected {expected_version}, found {current_version}."
-            )
-
-        next_version = current_version + 1
+        next_version = int(row["board_version"]) + 1
         connection.execute(
             """
             UPDATE kanban_boards

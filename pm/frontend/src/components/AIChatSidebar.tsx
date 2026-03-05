@@ -1,11 +1,18 @@
 "use client";
 
-import { FormEvent } from "react";
+import { FormEvent, useEffect, useRef } from "react";
+
+let nextMessageId = 0;
 
 export type ChatMessage = {
+  id: number;
   role: "user" | "assistant";
   content: string;
 };
+
+export function createChatMessage(role: ChatMessage["role"], content: string): ChatMessage {
+  return { id: nextMessageId++, role, content };
+}
 
 type AIChatSidebarProps = {
   messages: ChatMessage[];
@@ -32,6 +39,11 @@ export const AIChatSidebar = ({
   };
 
   const canSubmit = !isSubmitting && !isBlocked && input.trim().length > 0;
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
+  }, [messages]);
 
   return (
     <aside
@@ -56,9 +68,9 @@ export const AIChatSidebar = ({
             Start a conversation. The assistant can respond with advice and optional board updates.
           </p>
         ) : (
-          messages.map((message, index) => (
+          messages.map((message) => (
             <article
-              key={`${message.role}-${index}`}
+              key={message.id}
               className={`rounded-2xl px-4 py-3 text-sm leading-6 ${
                 message.role === "user"
                   ? "ml-7 border border-[var(--primary-blue)]/25 bg-[var(--primary-blue)]/10 text-[var(--navy-dark)]"
@@ -72,6 +84,7 @@ export const AIChatSidebar = ({
             </article>
           ))
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       <form className="mt-4 space-y-3" onSubmit={handleSubmit}>

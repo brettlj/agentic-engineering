@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
@@ -9,6 +10,7 @@ type KanbanCardProps = {
 };
 
 export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
 
@@ -39,14 +41,34 @@ export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
             {card.details}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => onDelete(card.id)}
-          className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
-          aria-label={`Delete ${card.title}`}
-        >
-          Remove
-        </button>
+        {confirmingDelete ? (
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={() => onDelete(card.id)}
+              className="rounded-full border border-red-300 bg-red-50 px-2 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+              aria-label={`Confirm delete ${card.title}`}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              className="rounded-full border border-[var(--stroke)] px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:text-[var(--navy-dark)]"
+            >
+              No
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
+            aria-label={`Delete ${card.title}`}
+          >
+            Remove
+          </button>
+        )}
       </div>
     </article>
   );

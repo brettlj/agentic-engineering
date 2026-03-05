@@ -5,6 +5,7 @@ description = "Project Management MVP backend scaffold."
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115.0",
+  "pydantic>=2.9.0",
   "uvicorn>=0.35.0",
 ]
 
@@ -16,3 +17,10 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]

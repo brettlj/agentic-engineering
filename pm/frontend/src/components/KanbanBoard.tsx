@@ -11,7 +11,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { AIChatSidebar, type ChatMessage } from "@/components/AIChatSidebar";
+import { AIChatSidebar, createChatMessage, type ChatMessage } from "@/components/AIChatSidebar";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
 import { createId, moveCard, type BoardData } from "@/lib/kanban";
@@ -244,7 +244,7 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
     setIsAiSubmitting(true);
     setAiError(null);
     setChatInput("");
-    setChatMessages((previous) => [...previous, { role: "user", content: question }]);
+    setChatMessages((previous) => [...previous, createChatMessage("user", question)]);
 
     try {
       const response = await fetch("/api/ai/chat", {
@@ -275,15 +275,20 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
       const data = (await response.json()) as AIChatResponse;
       setChatMessages((previous) => [
         ...previous,
-        { role: "assistant", content: data.assistant_message },
+        createChatMessage("assistant", data.assistant_message),
       ]);
 
       if (data.should_update_board) {
         setBoard(data.board);
         setBoardVersion(data.version);
         setSaveError(null);
-        pendingBoardRef.current = null;
-        setHasQueuedSaves(false);
+        if (pendingBoardRef.current) {
+          // Local changes were made while AI was responding — re-queue them
+          // against the new version so they aren't silently lost.
+          void flushPendingSave();
+        } else {
+          setHasQueuedSaves(false);
+        }
       }
     } catch (error) {
       setAiError(error instanceof Error ? error.message : "Unable to get AI response.");

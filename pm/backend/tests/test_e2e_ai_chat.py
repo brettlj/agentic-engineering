@@ -1,31 +1,15 @@
 import json
-import os
-import socket
-import subprocess
-import time
 from http.cookiejar import CookieJar
 from pathlib import Path
-from urllib.request import HTTPCookieProcessor, Request, build_opener, urlopen
+from urllib.request import HTTPCookieProcessor, Request, build_opener
+
+from backend.tests.server_helpers import (
+    free_port,
+    wait_for_ready,
+)
 
 
-def _free_port() -> int:
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        return int(sock.getsockname()[1])
-
-
-def _wait_for_ready(url: str, timeout_seconds: float = 10.0) -> None:
-    deadline = time.time() + timeout_seconds
-    while time.time() < deadline:
-        try:
-            with urlopen(url):
-                return
-        except Exception:
-            time.sleep(0.2)
-    raise AssertionError(f"Server did not become ready: {url}")
-
-
-def _write_test_app_module(module_path: Path) -> None:
+def _write_stub_app_module(module_path: Path) -> None:
     module_path.write_text(
         """
 from pathlib import Path
@@ -67,7 +51,10 @@ app = create_app(
     )
 
 
-def _start_server(root: Path, cwd: Path, port: int, db_path: Path) -> subprocess.Popen:
+def _start_stub_server(root, cwd, port, db_path):
+    import os
+    import subprocess
+
     env = os.environ.copy()
     env["PYTHONPATH"] = str(root)
     env["PM_DB_PATH"] = str(db_path)
@@ -94,14 +81,14 @@ def test_e2e_ai_chat_returns_message_and_updates_board_only_when_requested(
     root = Path(__file__).resolve().parents[2]
     app_dir = tmp_path / "app"
     app_dir.mkdir(parents=True, exist_ok=True)
-    _write_test_app_module(app_dir / "asgi_app.py")
+    _write_stub_app_module(app_dir / "asgi_app.py")
 
     db_path = tmp_path / "data" / "pm.sqlite"
-    port = _free_port()
-    proc = _start_server(root=root, cwd=app_dir, port=port, db_path=db_path)
+    port = free_port()
+    proc = _start_stub_server(root=root, cwd=app_dir, port=port, db_path=db_path)
 
     try:
-        _wait_for_ready(f"http://127.0.0.1:{port}/health")
+        wait_for_ready(f"http://127.0.0.1:{port}/health")
         opener = build_opener(HTTPCookieProcessor(CookieJar()))
 
         with opener.open(

@@ -1,58 +1,31 @@
 import json
-import os
-import socket
-import subprocess
-import time
 from http.cookiejar import CookieJar
 from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.request import HTTPCookieProcessor, Request, build_opener, urlopen
+from urllib.error import HTTPError
+from urllib.request import HTTPCookieProcessor, Request, build_opener
 
-
-def _free_port() -> int:
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        return int(sock.getsockname()[1])
-
-
-def _wait_for_ready(url: str, timeout_seconds: float = 10.0) -> None:
-    deadline = time.time() + timeout_seconds
-    while time.time() < deadline:
-        try:
-            with urlopen(url):
-                return
-        except URLError:
-            time.sleep(0.2)
-    raise AssertionError(f"Server did not become ready: {url}")
-
-
-def _start_server(root: Path, port: int, db_path: Path) -> subprocess.Popen:
-    env = os.environ.copy()
-    env["PM_DB_PATH"] = str(db_path)
-    return subprocess.Popen(
-        [
-            "python",
-            "-m",
-            "uvicorn",
-            "backend.app.main:app",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(port),
-        ],
-        cwd=root,
-        env=env,
-    )
+from backend.tests.server_helpers import (
+    build_frontend_export,
+    free_port,
+    start_server,
+    wait_for_ready,
+    write_test_app_module,
+)
 
 
 def test_e2e_http_smoke(tmp_path: Path) -> None:
     root = Path(__file__).resolve().parents[2]
     db_path = tmp_path / "data" / "pm.sqlite"
+    frontend_dir = tmp_path / "frontend"
+    build_frontend_export(frontend_dir)
+    app_dir = tmp_path / "smoke_app"
+    app_dir.mkdir(parents=True, exist_ok=True)
+    write_test_app_module(app_dir / "asgi_app.py")
 
-    port = _free_port()
-    proc = _start_server(root=root, port=port, db_path=db_path)
+    port = free_port()
+    proc = start_server(root=root, port=port, db_path=db_path, app_dir=app_dir, frontend_dir=frontend_dir)
     try:
-        _wait_for_ready(f"http://127.0.0.1:{port}/health")
+        wait_for_ready(f"http://127.0.0.1:{port}/health")
         cookie_jar = CookieJar()
         opener = build_opener(HTTPCookieProcessor(cookie_jar))
 
@@ -122,10 +95,10 @@ def test_e2e_http_smoke(tmp_path: Path) -> None:
         proc.terminate()
         proc.wait(timeout=10)
 
-    second_port = _free_port()
-    second_proc = _start_server(root=root, port=second_port, db_path=db_path)
+    second_port = free_port()
+    second_proc = start_server(root=root, port=second_port, db_path=db_path, app_dir=app_dir, frontend_dir=frontend_dir)
     try:
-        _wait_for_ready(f"http://127.0.0.1:{second_port}/health")
+        wait_for_ready(f"http://127.0.0.1:{second_port}/health")
         second_opener = build_opener(HTTPCookieProcessor(CookieJar()))
 
         with second_opener.open(
