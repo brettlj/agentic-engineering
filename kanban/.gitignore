@@ -1,0 +1,13 @@
+# Root-level ignores for the monorepo-style layout.
+.DS_Store
+
+# Frontend app artifacts
+frontend/node_modules
+frontend/.next
+frontend/coverage
+frontend/playwright-report
+frontend/test-results
+
+# Logs
+*.log
+npm-debug.log*
