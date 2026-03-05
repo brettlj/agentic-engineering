@@ -64,8 +64,8 @@ export default function BoardPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--cream)]">
-        <p className="font-display text-lg italic text-[var(--ink-muted)]">
+      <main className="flex min-h-screen items-center justify-center bg-[var(--bg)]">
+        <p className="font-display text-base font-semibold text-[var(--text-muted)]">
           Loading...
         </p>
       </main>
@@ -74,15 +74,20 @@ export default function BoardPage() {
 
   return (
     <div>
-      <div className="relative z-10 flex w-full items-center justify-end gap-3 px-6 pt-4">
-        <p className="border-b border-[var(--rule)] px-1 py-1 text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--ink-muted)]">
-          {username ?? "user"}
-        </p>
+      <div className="relative z-10 flex w-full items-center justify-end gap-2.5 px-6 pt-4">
+        <div className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-raised)] px-3 py-1.5 shadow-[var(--shadow-sm)]">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--col-lavender)] text-[10px] font-bold text-[var(--text)]">
+            {(username ?? "U")[0].toUpperCase()}
+          </div>
+          <span className="text-[13px] font-medium text-[var(--text-secondary)]">
+            {username ?? "user"}
+          </span>
+        </div>
         <button
           type="button"
           onClick={handleLogout}
           disabled={isLoggingOut}
-          className="bg-[var(--ink)] px-3 py-1.5 text-[10px] font-medium tracking-[0.2em] uppercase text-[var(--cream)] transition-colors hover:bg-[var(--ink-light)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full border border-[var(--border-strong)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--text-secondary)] transition-all hover:bg-[var(--bg)] hover:text-[var(--text)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoggingOut ? "Logging out..." : "Log out"}
         </button>

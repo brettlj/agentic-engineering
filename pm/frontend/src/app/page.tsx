@@ -77,8 +77,8 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--cream)]">
-        <p className="font-display text-lg italic text-[var(--ink-muted)]">
+      <main className="flex min-h-screen items-center justify-center bg-[var(--bg)]">
+        <p className="font-display text-base font-semibold text-[var(--text-muted)]">
           Checking session...
         </p>
       </main>
@@ -86,33 +86,36 @@ export default function Home() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-[var(--cream)] px-4 overflow-hidden">
-      {/* Decorative ruled lines */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 31px, var(--ink) 31px, var(--ink) 32px)",
-      }} />
-      {/* Copper margin line */}
-      <div className="pointer-events-none absolute top-0 bottom-0 left-[12%] w-px bg-[var(--copper)] opacity-[0.08]" />
+    <main className="relative flex min-h-screen items-center justify-center bg-[var(--bg)] px-4 overflow-hidden">
+      {/* Warm decorative blobs */}
+      <div className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full bg-[var(--col-peach)] opacity-60 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -left-40 h-[400px] w-[400px] rounded-full bg-[var(--col-sky)] opacity-50 blur-3xl" />
 
-      <section className="relative w-full max-w-[400px] rounded-sm border border-[var(--rule-strong)] bg-[var(--paper)] px-10 py-12 shadow-[var(--shadow-warm)]">
-        {/* Top edge detail */}
-        <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-[var(--copper)] to-transparent opacity-40" />
+      <section className="relative w-full max-w-[420px] rounded-3xl border border-[var(--border)] bg-[var(--bg-raised)] px-10 py-10 shadow-[var(--shadow-lg)]">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--coral)] text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+          </div>
+          <h2 className="font-display text-lg font-bold text-[var(--text)]">Kanban Studio</h2>
+        </div>
 
-        <p className="text-[11px] font-medium tracking-[0.3em] uppercase text-[var(--ink-muted)]">
-          Kanban Studio
-        </p>
-        <h1 className="mt-4 font-display text-4xl text-[var(--ink)]">
-          Sign in
+        <h1 className="mt-7 font-display text-2xl font-extrabold text-[var(--text)]">
+          Welcome back
         </h1>
-        <p className="mt-3 text-sm text-[var(--ink-muted)] leading-relaxed">
-          Use the MVP credentials to continue.
+        <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">
+          Sign in with the MVP credentials to get started.
         </p>
 
-        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-          <label className="block text-xs font-medium tracking-[0.1em] uppercase text-[var(--ink-light)]">
+        <form className="mt-7 space-y-4" onSubmit={handleSubmit}>
+          <label className="block text-[13px] font-semibold text-[var(--text)]">
             Username
             <input
-              className="mt-2 w-full border-b border-[var(--rule-strong)] bg-transparent px-0 py-2 text-sm text-[var(--ink)] outline-none transition-colors focus:border-[var(--copper)] placeholder:text-[var(--ink-muted)]/40"
+              className="mt-1.5 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3.5 py-2.5 text-sm text-[var(--text)] outline-none transition-all focus:border-[var(--coral)] focus:ring-2 focus:ring-[var(--coral-soft)]"
               name="username"
               autoComplete="username"
               value={username}
@@ -121,10 +124,10 @@ export default function Home() {
             />
           </label>
 
-          <label className="block text-xs font-medium tracking-[0.1em] uppercase text-[var(--ink-light)]">
+          <label className="block text-[13px] font-semibold text-[var(--text)]">
             Password
             <input
-              className="mt-2 w-full border-b border-[var(--rule-strong)] bg-transparent px-0 py-2 text-sm text-[var(--ink)] outline-none transition-colors focus:border-[var(--copper)] placeholder:text-[var(--ink-muted)]/40"
+              className="mt-1.5 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3.5 py-2.5 text-sm text-[var(--text)] outline-none transition-all focus:border-[var(--coral)] focus:ring-2 focus:ring-[var(--coral-soft)]"
               type="password"
               name="password"
               autoComplete="current-password"
@@ -135,13 +138,13 @@ export default function Home() {
           </label>
 
           {error ? (
-            <p className="text-sm font-medium text-[#B91C1C]">{error}</p>
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600">{error}</p>
           ) : null}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-2 w-full bg-[var(--ink)] px-4 py-3 text-[11px] font-medium tracking-[0.25em] uppercase text-[var(--cream)] transition-all hover:bg-[var(--ink-light)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-[var(--coral)] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[var(--coral-hover)] hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Signing in..." : "Sign in"}
           </button>

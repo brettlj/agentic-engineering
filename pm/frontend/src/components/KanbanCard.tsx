@@ -7,10 +7,9 @@ import type { Card } from "@/lib/kanban";
 type KanbanCardProps = {
   card: Card;
   onDelete: (cardId: string) => void;
-  accentColor: string;
 };
 
-export const KanbanCard = ({ card, onDelete, accentColor }: KanbanCardProps) => {
+export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
@@ -25,26 +24,20 @@ export const KanbanCard = ({ card, onDelete, accentColor }: KanbanCardProps) => 
       ref={setNodeRef}
       style={style}
       className={clsx(
-        "group relative bg-[var(--paper)] px-4 py-3.5 shadow-[0_1px_3px_rgba(28,25,23,0.06)]",
-        "transition-all duration-150 hover:shadow-[var(--shadow-warm)]",
-        isDragging && "opacity-30"
+        "group rounded-xl border border-[var(--border)] bg-[var(--bg-raised)] px-3.5 py-3 shadow-[var(--shadow-sm)]",
+        "transition-all duration-150 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5",
+        isDragging && "opacity-30 ring-2 ring-[var(--coral)]/20"
       )}
       {...attributes}
       {...listeners}
       data-testid={`card-${card.id}`}
     >
-      {/* Left accent bar */}
-      <div
-        className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full opacity-50 transition-opacity group-hover:opacity-100"
-        style={{ backgroundColor: accentColor }}
-      />
-
-      <div className="flex items-start justify-between gap-3 pl-2">
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h4 className="text-sm font-medium text-[var(--ink)]">
+          <h4 className="text-[13px] font-semibold leading-snug text-[var(--text)]">
             {card.title}
           </h4>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--ink-muted)]">
+          <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-muted)]">
             {card.details}
           </p>
         </div>
@@ -53,7 +46,7 @@ export const KanbanCard = ({ card, onDelete, accentColor }: KanbanCardProps) => 
             <button
               type="button"
               onClick={() => onDelete(card.id)}
-              className="border border-[#B91C1C]/20 bg-[#B91C1C]/5 px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-[#B91C1C] transition hover:bg-[#B91C1C]/10"
+              className="rounded-lg bg-red-50 px-2 py-1 text-[11px] font-bold text-red-500 transition hover:bg-red-100"
               aria-label={`Confirm delete ${card.title}`}
             >
               Yes
@@ -61,7 +54,7 @@ export const KanbanCard = ({ card, onDelete, accentColor }: KanbanCardProps) => 
             <button
               type="button"
               onClick={() => setConfirmingDelete(false)}
-              className="border border-[var(--rule)] px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-[var(--ink-muted)] transition hover:text-[var(--ink)]"
+              className="rounded-lg bg-[var(--bg)] px-2 py-1 text-[11px] font-bold text-[var(--text-muted)] transition hover:text-[var(--text)]"
             >
               No
             </button>
@@ -70,7 +63,7 @@ export const KanbanCard = ({ card, onDelete, accentColor }: KanbanCardProps) => 
           <button
             type="button"
             onClick={() => setConfirmingDelete(true)}
-            className="flex-shrink-0 p-1.5 text-[var(--ink-muted)] opacity-0 transition group-hover:opacity-100 hover:text-[#B91C1C]"
+            className="flex-shrink-0 rounded-lg p-1 text-[var(--text-muted)] opacity-0 transition group-hover:opacity-100 hover:bg-red-50 hover:text-red-400"
             aria-label={`Delete ${card.title}`}
           >
             <svg

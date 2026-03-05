@@ -34,7 +34,7 @@ describe("Login page", () => {
 
     render(<Home />);
 
-    expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Welcome back" })).toBeInTheDocument();
     expect(replaceMock).not.toHaveBeenCalled();
   });
 
@@ -59,7 +59,7 @@ describe("Login page", () => {
 
     render(<Home />);
 
-    await screen.findByRole("heading", { name: "Sign in" });
+    await screen.findByRole("heading", { name: "Welcome back" });
     await userEvent.type(screen.getByLabelText("Username"), "user");
     await userEvent.type(screen.getByLabelText("Password"), "wrong");
     await userEvent.click(screen.getByRole("button", { name: /^sign in$/i }));

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { DM_Sans, Instrument_Serif } from "next/font/google";
+import { Nunito, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const displayFont = Instrument_Serif({
+const displayFont = Nunito({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: "400",
+  weight: ["600", "700", "800"],
 });
 
-const bodyFont = DM_Sans({
+const bodyFont = Plus_Jakarta_Sans({
   variable: "--font-body",
   subsets: ["latin"],
 });

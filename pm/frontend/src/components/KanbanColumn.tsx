@@ -6,6 +6,11 @@ import type { Card, Column } from "@/lib/kanban";
 import { KanbanCard } from "@/components/KanbanCard";
 import { NewCardForm } from "@/components/NewCardForm";
 
+type ColumnTint = {
+  bg: string;
+  dot: string;
+};
+
 type KanbanColumnProps = {
   column: Column;
   cards: Card[];
@@ -14,14 +19,14 @@ type KanbanColumnProps = {
   onDeleteCard: (columnId: string, cardId: string) => void;
   activeCardId: string | null;
   overCardId: string | null;
-  accentColor: string;
+  tint: ColumnTint;
 };
 
 const DropIndicator = ({ color }: { color: string }) => (
-  <div className="flex items-center gap-2 px-1">
-    <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-    <div className="h-px flex-1" style={{ backgroundColor: color }} />
-    <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+  <div className="flex items-center gap-2 px-2">
+    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+    <div className="h-[2px] flex-1 rounded-full" style={{ backgroundColor: color }} />
+    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
   </div>
 );
 
@@ -33,7 +38,7 @@ export const KanbanColumn = memo(function KanbanColumn({
   onDeleteCard,
   activeCardId,
   overCardId,
-  accentColor,
+  tint,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
@@ -45,57 +50,54 @@ export const KanbanColumn = memo(function KanbanColumn({
     <section
       ref={setNodeRef}
       className={clsx(
-        "flex min-h-[520px] flex-col bg-[var(--cream-dark)]/60 p-4 transition-all duration-200",
-        isHighlighted && "bg-[var(--copper-glow)]"
+        "flex min-h-[520px] flex-col rounded-2xl p-3.5 transition-all duration-200",
+        isHighlighted && "ring-2 ring-[var(--coral)]/30"
       )}
-      style={{
-        borderTop: `2px solid ${accentColor}`,
-      }}
+      style={{ backgroundColor: tint.bg }}
       data-testid={`column-${column.id}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[var(--ink-muted)]">
-              {cards.length} {cards.length === 1 ? "card" : "cards"}
-            </span>
-          </div>
-          <input
-            value={column.title}
-            onChange={(event) => onRename(column.id, event.target.value)}
-            className="mt-1 w-full bg-transparent font-display text-xl text-[var(--ink)] outline-none"
-            aria-label="Column title"
-          />
-        </div>
+      <div className="flex items-center gap-2 px-1">
+        <span
+          className="h-2.5 w-2.5 rounded-full"
+          style={{ backgroundColor: tint.dot }}
+        />
+        <input
+          value={column.title}
+          onChange={(event) => onRename(column.id, event.target.value)}
+          className="flex-1 bg-transparent font-display text-[15px] font-bold text-[var(--text)] outline-none"
+          aria-label="Column title"
+        />
+        <span className="rounded-full bg-white/60 px-2 py-0.5 text-[11px] font-bold text-[var(--text-secondary)]">
+          {cards.length}
+        </span>
       </div>
-      <div className="mt-4 flex flex-1 flex-col gap-2.5">
+      <div className="mt-3 flex flex-1 flex-col gap-2">
         <SortableContext items={column.cardIds} strategy={verticalListSortingStrategy}>
           {cards.map((card) => (
             <div key={card.id}>
               {overCardId === card.id && activeCardId !== card.id && (
                 <div className="mb-2">
-                  <DropIndicator color={accentColor} />
+                  <DropIndicator color={tint.dot} />
                 </div>
               )}
               <KanbanCard
                 card={card}
                 onDelete={(cardId) => onDeleteCard(column.id, cardId)}
-                accentColor={accentColor}
               />
             </div>
           ))}
         </SortableContext>
         {isOver && isDragging && !isOverCardInThisColumn && (
           <div className="mt-1">
-            <DropIndicator color={accentColor} />
+            <DropIndicator color={tint.dot} />
           </div>
         )}
         {cards.length === 0 && (
           <div className={clsx(
-            "flex flex-1 items-center justify-center border border-dashed px-3 py-6 text-center text-[11px] font-medium tracking-[0.15em] uppercase",
+            "flex flex-1 items-center justify-center rounded-xl border-2 border-dashed px-3 py-6 text-center text-[12px] font-semibold",
             isHighlighted
-              ? "border-[var(--copper)] text-[var(--copper)]"
-              : "border-[var(--rule-strong)] text-[var(--ink-muted)]"
+              ? "border-[var(--coral)]/40 text-[var(--coral)]"
+              : "border-white/40 text-[var(--text-muted)]"
           )}>
             Drop a card here
           </div>

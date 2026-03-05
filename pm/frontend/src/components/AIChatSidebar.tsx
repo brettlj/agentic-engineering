@@ -54,7 +54,7 @@ export const AIChatSidebar = ({
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-[var(--ink)]/30 backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[2px] transition-opacity"
           onClick={onToggle}
         />
       )}
@@ -63,7 +63,7 @@ export const AIChatSidebar = ({
       <button
         type="button"
         onClick={onToggle}
-        className={`fixed top-1/2 z-50 -translate-y-1/2 bg-[var(--sidebar-bg)] px-2 py-5 text-[var(--sidebar-text)] shadow-lg transition-all hover:bg-[var(--sidebar-surface)] ${isOpen ? "right-[420px]" : "right-0"}`}
+        className={`fixed top-1/2 z-50 -translate-y-1/2 rounded-l-2xl bg-[var(--coral)] px-2.5 py-4 text-white shadow-lg transition-all hover:bg-[var(--coral-hover)] ${isOpen ? "right-[420px]" : "right-0"}`}
         aria-label={isOpen ? "Close AI chat" : "Open AI chat"}
       >
         <svg
@@ -73,7 +73,7 @@ export const AIChatSidebar = ({
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.5"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
           className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -82,26 +82,33 @@ export const AIChatSidebar = ({
         </svg>
       </button>
 
-      {/* Slide-out panel -- dark editorial sidebar */}
+      {/* Slide-out panel */}
       <aside
         data-testid="ai-chat-sidebar"
-        className={`fixed right-0 top-0 z-50 flex h-full w-[420px] flex-col bg-[var(--sidebar-bg)] shadow-[-12px_0_40px_rgba(0,0,0,0.3)] transition-transform duration-300 ${
+        className={`fixed right-0 top-0 z-50 flex h-full w-[420px] flex-col border-l border-[var(--border)] bg-[var(--bg-raised)] shadow-[-8px_0_30px_rgba(0,0,0,0.08)] transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between border-b border-[var(--sidebar-border)] px-6 py-5">
-          <div>
-            <p className="text-[10px] font-medium tracking-[0.3em] uppercase text-[var(--sidebar-muted)]">
-              AI Assistant
-            </p>
-            <h2 className="mt-1 font-display text-2xl text-[var(--sidebar-text)]">
-              Board Chat
-            </h2>
+        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--col-lavender)]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B6CC1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
+                <circle cx="9" cy="15" r="1" />
+                <circle cx="15" cy="15" r="1" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="font-display text-[15px] font-bold text-[var(--text)]">
+                AI Assistant
+              </h2>
+              <p className="text-[11px] text-[var(--text-muted)]">Ask anything about your board</p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onToggle}
-            className="p-2 text-[var(--sidebar-muted)] transition hover:text-[var(--sidebar-text)]"
+            className="rounded-lg p-1.5 text-[var(--text-muted)] transition hover:bg-[var(--bg)] hover:text-[var(--text)]"
             aria-label="Close AI chat"
           >
             <svg
@@ -111,7 +118,7 @@ export const AIChatSidebar = ({
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.5"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -121,24 +128,22 @@ export const AIChatSidebar = ({
           </button>
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto px-6 py-5">
+        <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
           {messages.length === 0 ? (
-            <p className="border border-dashed border-[var(--sidebar-border)] px-4 py-3 text-sm leading-relaxed text-[var(--sidebar-muted)]">
-              Start a conversation. The assistant can respond with advice and optional board updates.
-            </p>
+            <div className="rounded-2xl bg-[var(--col-lavender)] p-4 text-sm leading-relaxed text-[var(--text-secondary)]">
+              <p className="font-semibold text-[var(--text)]">Hey there!</p>
+              <p className="mt-1">I can help manage your board. Ask me to move cards, summarize progress, or suggest improvements.</p>
+            </div>
           ) : (
             messages.map((message) => (
               <article
                 key={message.id}
-                className={`px-4 py-3 text-sm leading-relaxed ${
+                className={`rounded-2xl px-4 py-3 text-[13px] leading-relaxed ${
                   message.role === "user"
-                    ? "ml-6 border-l-2 border-[var(--copper)] bg-[var(--copper)]/10 text-[var(--sidebar-text)]"
-                    : "mr-6 border-l-2 border-[var(--sage-light)] bg-white/5 text-[var(--sidebar-text)]"
+                    ? "ml-8 bg-[var(--coral)] text-white"
+                    : "mr-8 bg-[var(--bg)] text-[var(--text)]"
                 }`}
               >
-                <p className="mb-1.5 text-[10px] font-medium tracking-[0.25em] uppercase text-[var(--sidebar-muted)]">
-                  {message.role === "user" ? "You" : "Assistant"}
-                </p>
                 <p>{message.content}</p>
               </article>
             ))
@@ -146,10 +151,10 @@ export const AIChatSidebar = ({
           <div ref={messagesEndRef} />
         </div>
 
-        <form className="border-t border-[var(--sidebar-border)] px-6 py-5 space-y-3" onSubmit={handleSubmit}>
+        <form className="border-t border-[var(--border)] px-5 py-4 space-y-3" onSubmit={handleSubmit}>
           <label
             htmlFor="ai-chat-input"
-            className="text-[10px] font-medium tracking-[0.25em] uppercase text-[var(--sidebar-muted)]"
+            className="text-[12px] font-semibold text-[var(--text-muted)]"
           >
             Message
           </label>
@@ -159,24 +164,24 @@ export const AIChatSidebar = ({
             value={input}
             onChange={(event) => onInputChange(event.target.value)}
             placeholder="e.g. Summarize top risks and move blocked work to Review."
-            className="h-24 w-full resize-none border border-[var(--sidebar-border)] bg-[var(--sidebar-surface)] px-3 py-2.5 text-sm text-[var(--sidebar-text)] outline-none transition-colors focus:border-[var(--copper)]/50 placeholder:text-[var(--sidebar-muted)]/50"
+            className="h-20 w-full resize-none rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3.5 py-2.5 text-[13px] text-[var(--text)] outline-none transition-all focus:border-[var(--coral)] focus:ring-2 focus:ring-[var(--coral-soft)]"
             disabled={isSubmitting || isBlocked}
           />
           {error ? (
-            <p className="text-[11px] font-medium tracking-wider uppercase text-[#EF4444]">
+            <p className="rounded-lg bg-red-50 px-3 py-1.5 text-[12px] font-semibold text-red-500">
               {error}
             </p>
           ) : null}
           {isBlocked && !isSubmitting ? (
-            <p className="text-[11px] font-medium tracking-wider uppercase text-[var(--sidebar-muted)]">
-              Wait for board save to finish before submitting.
+            <p className="text-[12px] font-medium text-[var(--text-muted)]">
+              Waiting for board to finish saving...
             </p>
           ) : null}
           <button
             type="submit"
             data-testid="ai-chat-send"
             disabled={!canSubmit}
-            className="w-full bg-[var(--copper)] px-4 py-2.5 text-[10px] font-medium tracking-[0.25em] uppercase text-white transition-colors enabled:hover:bg-[var(--copper-light)] disabled:cursor-not-allowed disabled:opacity-40"
+            className="w-full rounded-xl bg-[var(--coral)] px-4 py-2.5 text-[13px] font-bold text-white transition-all enabled:hover:bg-[var(--coral-hover)] enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "Sending..." : "Send"}
           </button>

@@ -21,16 +21,16 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
   };
 
   return (
-    <div className="mt-4">
+    <div className="mt-3">
       {isOpen ? (
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-2.5 rounded-xl bg-[var(--bg-raised)] p-3 shadow-[var(--shadow-sm)]">
           <input
             value={formState.title}
             onChange={(event) =>
               setFormState((prev) => ({ ...prev, title: event.target.value }))
             }
             placeholder="Card title"
-            className="w-full border-b border-[var(--rule-strong)] bg-transparent px-0 py-2 text-sm font-medium text-[var(--ink)] outline-none transition-colors focus:border-[var(--copper)]"
+            className="w-full rounded-lg border border-[var(--border-strong)] bg-[var(--bg)] px-3 py-2 text-[13px] font-medium text-[var(--text)] outline-none transition-all focus:border-[var(--coral)] focus:ring-2 focus:ring-[var(--coral-soft)]"
             required
           />
           <textarea
@@ -39,13 +39,13 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
               setFormState((prev) => ({ ...prev, details: event.target.value }))
             }
             placeholder="Details"
-            rows={3}
-            className="w-full resize-none border-b border-[var(--rule-strong)] bg-transparent px-0 py-2 text-sm text-[var(--ink-muted)] outline-none transition-colors focus:border-[var(--copper)]"
+            rows={2}
+            className="w-full resize-none rounded-lg border border-[var(--border-strong)] bg-[var(--bg)] px-3 py-2 text-[13px] text-[var(--text-secondary)] outline-none transition-all focus:border-[var(--coral)] focus:ring-2 focus:ring-[var(--coral-soft)]"
           />
           <div className="flex items-center gap-2">
             <button
               type="submit"
-              className="bg-[var(--ink)] px-4 py-2 text-[10px] font-medium tracking-[0.2em] uppercase text-[var(--cream)] transition-colors hover:bg-[var(--ink-light)]"
+              className="rounded-lg bg-[var(--coral)] px-3.5 py-1.5 text-[12px] font-bold text-white transition-all hover:bg-[var(--coral-hover)] active:scale-[0.97]"
             >
               Add card
             </button>
@@ -55,7 +55,7 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
                 setIsOpen(false);
                 setFormState(initialFormState);
               }}
-              className="border border-[var(--rule-strong)] px-3 py-2 text-[10px] font-medium tracking-[0.2em] uppercase text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)]"
+              className="rounded-lg px-3 py-1.5 text-[12px] font-semibold text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
             >
               Cancel
             </button>
@@ -65,8 +65,12 @@ export const NewCardForm = ({ onAdd }: NewCardFormProps) => {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="w-full border border-dashed border-[var(--rule-strong)] px-3 py-2 text-[10px] font-medium tracking-[0.2em] uppercase text-[var(--ink-muted)] transition-colors hover:border-[var(--copper)] hover:text-[var(--copper)]"
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-white/50 px-3 py-2 text-[12px] font-semibold text-[var(--text-muted)] transition-all hover:border-[var(--coral)]/30 hover:text-[var(--coral)]"
         >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
           Add a card
         </button>
       )}

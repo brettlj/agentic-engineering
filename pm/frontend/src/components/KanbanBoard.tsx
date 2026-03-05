@@ -43,11 +43,12 @@ type KanbanBoardProps = {
   onAuthExpired?: () => void;
 };
 
-const COLUMN_ACCENTS = [
-  "var(--copper)",
-  "var(--sage)",
-  "var(--ink-muted)",
-  "#6366F1",
+const COLUMN_TINTS = [
+  { bg: "var(--col-peach)", dot: "#E8725C" },
+  { bg: "var(--col-mint)", dot: "#34A77B" },
+  { bg: "var(--col-sky)", dot: "#4A90D9" },
+  { bg: "var(--col-lavender)", dot: "#8B6CC1" },
+  { bg: "var(--col-honey)", dot: "#D4970A" },
 ];
 
 export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
@@ -329,8 +330,8 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
 
   if (isLoadingBoard) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--cream)]">
-        <p className="font-display text-lg italic text-[var(--ink-muted)]">
+      <main className="flex min-h-screen items-center justify-center bg-[var(--bg)]">
+        <p className="font-display text-base font-semibold text-[var(--text-muted)]">
           Loading board...
         </p>
       </main>
@@ -339,20 +340,20 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
 
   if (!board || loadError) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--cream)] px-4">
-        <section className="w-full max-w-lg border border-[var(--rule-strong)] bg-[var(--paper)] p-10 text-center shadow-[var(--shadow-warm)]">
-          <h1 className="font-display text-3xl text-[var(--ink)]">
+      <main className="flex min-h-screen items-center justify-center bg-[var(--bg)] px-4">
+        <section className="w-full max-w-lg rounded-2xl border border-[var(--border)] bg-[var(--bg-raised)] p-10 text-center shadow-[var(--shadow-md)]">
+          <h1 className="font-display text-2xl font-bold text-[var(--text)]">
             Unable to load board
           </h1>
-          <p className="mt-3 text-sm text-[var(--ink-muted)]">
+          <p className="mt-3 text-sm text-[var(--text-secondary)]">
             {loadError ?? "Unable to load board."}
           </p>
           <button
             type="button"
             onClick={() => void fetchBoard()}
-            className="mt-6 bg-[var(--ink)] px-5 py-2.5 text-[11px] font-medium tracking-[0.2em] uppercase text-[var(--cream)] transition-colors hover:bg-[var(--ink-light)]"
+            className="mt-6 rounded-xl bg-[var(--coral)] px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-[var(--coral-hover)] active:scale-[0.98]"
           >
-            Retry
+            Try again
           </button>
         </section>
       </main>
@@ -365,35 +366,49 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
     ? "Saving..."
     : saveError
       ? saveError
-      : "Saved";
+      : "All changes saved";
 
   return (
     <div className="relative overflow-hidden">
-      <main className="relative mx-auto flex min-h-screen flex-col gap-6 px-6 pb-16 pt-6">
-        <header className="flex items-center justify-between gap-6 border-b border-[var(--rule)] pb-5">
-          <div className="flex items-center gap-8">
-            <div>
-              <h1 className="font-display text-3xl text-[var(--ink)]">
-                Kanban Studio
-              </h1>
-              <p className="mt-1 text-[11px] font-medium tracking-[0.1em] uppercase text-[var(--ink-muted)]">
-                {statusText}
-              </p>
+      <main className="relative mx-auto flex min-h-screen flex-col gap-5 px-6 pb-16 pt-4">
+        <header className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-raised)] px-6 py-4 shadow-[var(--shadow-sm)]">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--coral)] text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="font-display text-lg font-bold text-[var(--text)]">
+                  Kanban Studio
+                </h1>
+                <p className="text-[12px] font-medium text-[var(--text-muted)]">
+                  {statusText}
+                </p>
+              </div>
             </div>
-            <div className="hidden items-center gap-3 md:flex">
-              {board.columns.map((column, index) => (
-                <div
-                  key={column.id}
-                  className="flex items-center gap-2 text-[11px] font-medium tracking-[0.1em] uppercase text-[var(--ink-muted)]"
-                >
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: COLUMN_ACCENTS[index % COLUMN_ACCENTS.length] }}
-                  />
-                  {column.title}
-                  <span className="font-bold text-[var(--ink-light)]">{column.cardIds.length}</span>
-                </div>
-              ))}
+            <div className="hidden items-center gap-2.5 md:flex">
+              {board.columns.map((column, index) => {
+                const tint = COLUMN_TINTS[index % COLUMN_TINTS.length];
+                return (
+                  <div
+                    key={column.id}
+                    className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold text-[var(--text-secondary)]"
+                    style={{ backgroundColor: tint.bg }}
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: tint.dot }}
+                    />
+                    {column.title}
+                    <span className="font-bold text-[var(--text)]">{column.cardIds.length}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </header>
@@ -406,7 +421,7 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <section className="grid auto-cols-fr grid-flow-col gap-5">
+          <section className="grid auto-cols-fr grid-flow-col gap-4">
             {board.columns.map((column, index) => (
               <KanbanColumn
                 key={column.id}
@@ -417,7 +432,7 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
                 onDeleteCard={handleDeleteCard}
                 activeCardId={activeCardId}
                 overCardId={overCardId}
-                accentColor={COLUMN_ACCENTS[index % COLUMN_ACCENTS.length]}
+                tint={COLUMN_TINTS[index % COLUMN_TINTS.length]}
               />
             ))}
           </section>
