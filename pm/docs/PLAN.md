@@ -11,7 +11,7 @@ After completing each part, pause, provide review and verification instructions,
 - Scripts target for this phase: Linux and macOS start/stop scripts.
 - Testing expectations across implementation parts: unit, integration, regression, and e2e coverage (scope adjusted per part).
 
-## Implemented design decisions (through Part 7)
+## Implemented design decisions (through post-Part 10 hardening)
 
 - Container build strategy:
   - Single runtime container with multi-stage build (Node build stage + Python runtime stage).
@@ -35,6 +35,45 @@ After completing each part, pause, provide review and verification instructions,
   - Board loads from backend on authenticated page load.
   - UI applies optimistic local updates, queues saves, and serializes save requests.
   - On version conflict, UI reloads latest board and surfaces a clear status message.
+- AI connectivity and failure behavior:
+  - Backend OpenRouter client is initialized at startup and fails fast when required env vars are missing.
+  - AI connectivity endpoint (`GET /api/ai/connectivity`) is authenticated and reports model + simple output.
+  - AI request timeout and transport failures are surfaced as backend `502` errors without crashing the app.
+- AI structured chat contract:
+  - `POST /api/ai/chat` always includes board JSON, user question, and conversation history.
+  - Assistant message is always user-facing natural language; board updates are applied only on validated structured outputs.
+  - Invalid/malformed AI outputs are treated as no-update and never persisted.
+- Sidebar AI UX behavior:
+  - Sidebar chat is integrated into `/board` with loading/error states.
+  - Chat submissions are serialized while AI operations are in flight to prevent race-condition writes.
+  - Valid AI board changes are persisted and immediately reflected in UI state.
+- Model/provider/runtime configuration:
+- Model is env-configurable via `OPENROUTER_MODEL` (current default: `openai/gpt-4o-mini`).
+  - Provider routing is env-configurable (`OPENROUTER_PROVIDER_*`) and used for reliability tuning.
+  - Chat strategy is env-configurable via `OPENROUTER_CHAT_MODE`:
+    - `board_snapshot`: model returns full board snapshot.
+    - `operation`: model returns structured operation, backend applies mutation server-side.
+- Structured operation mode hardening:
+  - Operation-mode schema was adjusted for OpenAI `response_format` strict requirements.
+  - Added light contradiction guard: if assistant text claims an action but returns `should_update_board=false` for an action request, backend retries once more.
+
+### Current recommended runtime config
+
+```bash
+# Required
+OPENROUTER_API_KEY=your_key_here
+
+# Recommended for current reliability profile
+OPENROUTER_MODEL=openai/gpt-4o-mini
+OPENROUTER_CHAT_MODE=operation
+OPENROUTER_PROVIDER_ORDER=openai
+OPENROUTER_PROVIDER_ALLOW_FALLBACKS=false
+OPENROUTER_PROVIDER_REQUIRE_PARAMETERS=true
+
+# Optional
+OPENROUTER_TIMEOUT_SECONDS=15
+OPENROUTER_PROVIDER_SORT=
+```
 
 ## Part 1: Plan
 
@@ -282,7 +321,7 @@ Now allow the backend to make an AI call via OpenRouter. Test connectivity with 
 ### Checklist
 
 - [x] Add backend OpenRouter client using `OPENROUTER_API_KEY` from environment.
-- [x] Configure model `openai/gpt-oss-120b`.
+- [x] Configure model `openai/gpt-4o-mini` as current default.
 - [x] Add simple internal test path or command to run a `2+2` connectivity check.
 - [x] Add timeout/error handling for API failures without crashing backend.
 - [x] Document required env vars and local test instructions.

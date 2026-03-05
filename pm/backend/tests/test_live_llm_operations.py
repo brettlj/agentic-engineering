@@ -11,6 +11,17 @@ from urllib.request import HTTPCookieProcessor, Request, build_opener, urlopen
 
 import pytest
 
+SIMPLE_BOARD = {
+    "columns": [
+        {"id": "col-backlog", "title": "Backlog", "cardIds": []},
+        {"id": "col-discovery", "title": "Discovery", "cardIds": []},
+        {"id": "col-progress", "title": "In Progress", "cardIds": []},
+        {"id": "col-review", "title": "Review", "cardIds": []},
+        {"id": "col-done", "title": "Done", "cardIds": []},
+    ],
+    "cards": {},
+}
+
 
 def _should_run_live_llm_tests() -> tuple[bool, str]:
     if os.environ.get("RUN_LIVE_LLM_TESTS") != "1":
@@ -97,7 +108,9 @@ def _live_server(tmp_path: Path):
     env["PYTHONPATH"] = str(root)
     env["PM_DB_PATH"] = str(db_path)
     env["PM_FRONTEND_PATH"] = str(frontend_dir)
-    env.setdefault("OPENROUTER_TIMEOUT_SECONDS", "8")
+    env["OPENROUTER_TIMEOUT_SECONDS"] = "8"
+    env["OPENROUTER_PROVIDER_ALLOW_FALLBACKS"] = "false"
+    env["OPENROUTER_PROVIDER_ORDER"] = "parasail"
 
     proc = subprocess.Popen(
         [
@@ -153,6 +166,18 @@ def _set_board(base_url: str, opener, board_payload: dict) -> None:
     assert status == 200
 
 
+def _reset_simple_board(base_url: str, opener) -> None:
+    current = _get_board(base_url, opener)
+    _set_board(
+        base_url,
+        opener,
+        {
+            "board": SIMPLE_BOARD,
+            "version": current["version"],
+        },
+    )
+
+
 def _column_by_title(board_payload: dict, column_title: str) -> dict:
     for column in board_payload["board"]["columns"]:
         if column["title"] == column_title:
@@ -194,9 +219,9 @@ def _ask_ai(
     question: str,
     *,
     require_update: bool,
-    attempts: int = 1,
+    attempts: int = 3,
 ) -> dict:
-    last_detail = ""
+    attempt_details: list[str] = []
     for _ in range(attempts):
         try:
             status, payload = _http_json(
@@ -207,20 +232,22 @@ def _ask_ai(
                 timeout=50.0,
             )
         except (URLError, TimeoutError, OSError) as exc:
-            last_detail = f"Network error: {exc}"
+            attempt_details.append(f"network_error={exc}")
             time.sleep(1)
             continue
 
         if status == 200 and payload.get("should_update_board") is require_update:
             return payload
-        last_detail = json.dumps(payload)
+        attempt_details.append(f"status={status} payload={json.dumps(payload)}")
         time.sleep(1)
 
-    raise AssertionError(f"AI chat did not satisfy expectation. Last response: {last_detail}")
+    details = " | ".join(attempt_details) if attempt_details else "no attempts recorded"
+    raise AssertionError(f"AI chat did not satisfy expectation. Attempts: {details}")
 
 
 def test_live_llm_no_change_operation(tmp_path: Path) -> None:
     with _live_server(tmp_path) as (base_url, opener):
+        _reset_simple_board(base_url, opener)
         before = _get_board(base_url, opener)
         _ask_ai(
             base_url,
@@ -235,6 +262,7 @@ def test_live_llm_no_change_operation(tmp_path: Path) -> None:
 
 def test_live_llm_create_card_operation(tmp_path: Path) -> None:
     with _live_server(tmp_path) as (base_url, opener):
+        _reset_simple_board(base_url, opener)
         suffix = str(int(time.time() * 1000))
         title = f"LLM Ops Create {suffix}"
         details = f"Created details {suffix}"
@@ -252,6 +280,7 @@ def test_live_llm_create_card_operation(tmp_path: Path) -> None:
 
 def test_live_llm_update_card_title_operation(tmp_path: Path) -> None:
     with _live_server(tmp_path) as (base_url, opener):
+        _reset_simple_board(base_url, opener)
         suffix = str(int(time.time() * 1000))
         old_title = f"LLM Ops Rename Source {suffix}"
         new_title = f"LLM Ops Rename Target {suffix}"
@@ -276,6 +305,7 @@ def test_live_llm_update_card_title_operation(tmp_path: Path) -> None:
 
 def test_live_llm_update_card_details_operation(tmp_path: Path) -> None:
     with _live_server(tmp_path) as (base_url, opener):
+        _reset_simple_board(base_url, opener)
         suffix = str(int(time.time() * 1000))
         title = f"LLM Ops Details {suffix}"
         details = f"Updated details {suffix}"
@@ -300,6 +330,7 @@ def test_live_llm_update_card_details_operation(tmp_path: Path) -> None:
 
 def test_live_llm_move_card_operation(tmp_path: Path) -> None:
     with _live_server(tmp_path) as (base_url, opener):
+        _reset_simple_board(base_url, opener)
         suffix = str(int(time.time() * 1000))
         title = f"LLM Ops Move {suffix}"
         card_id = f"card-move-{suffix}"
@@ -326,6 +357,7 @@ def test_live_llm_move_card_operation(tmp_path: Path) -> None:
 
 def test_live_llm_reorder_within_column_operation(tmp_path: Path) -> None:
     with _live_server(tmp_path) as (base_url, opener):
+        _reset_simple_board(base_url, opener)
         suffix = str(int(time.time() * 1000))
         target_title = f"LLM Ops Reorder Target {suffix}"
         anchor_title = f"LLM Ops Reorder Anchor {suffix}"
@@ -360,6 +392,7 @@ def test_live_llm_reorder_within_column_operation(tmp_path: Path) -> None:
 
 def test_live_llm_delete_card_operation(tmp_path: Path) -> None:
     with _live_server(tmp_path) as (base_url, opener):
+        _reset_simple_board(base_url, opener)
         suffix = str(int(time.time() * 1000))
         title = f"LLM Ops Delete {suffix}"
         card_id = f"card-delete-{suffix}"

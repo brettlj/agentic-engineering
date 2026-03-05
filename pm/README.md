@@ -8,6 +8,12 @@ Set required environment variables in your shell or `.env` at repo root:
 OPENROUTER_API_KEY=your_key_here
 # Optional override (seconds)
 OPENROUTER_TIMEOUT_SECONDS=15
+# Optional override model (default: openai/gpt-4o-mini)
+OPENROUTER_MODEL=openai/gpt-4o-mini
+# Optional chat mode:
+# - board_snapshot (model returns full board_update snapshot)
+# - operation (model returns structured operation; backend applies update server-side)
+OPENROUTER_CHAT_MODE=board_snapshot
 # Optional provider routing controls (OpenRouter)
 OPENROUTER_PROVIDER_REQUIRE_PARAMETERS=true
 OPENROUTER_PROVIDER_ALLOW_FALLBACKS=true
@@ -39,6 +45,7 @@ When running:
   - Password: `password`
 - Board changes persist through backend APIs after login.
 - `/board` includes an AI sidebar chat that can optionally apply board updates from structured AI responses.
+- AI chat supports a structured operation mode where natural-language assistant messages are preserved while board mutations are applied server-side.
 - `GET http://127.0.0.1:8000/health`
 - `GET http://127.0.0.1:8000/api/hello`
 - `GET http://127.0.0.1:8000/api/board` (requires auth cookie)
