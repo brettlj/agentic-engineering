@@ -74,15 +74,15 @@ export default function BoardPage() {
 
   return (
     <div>
-      <div className="relative z-10 mx-auto flex w-full max-w-[1500px] items-center justify-end gap-3 px-6 pt-6">
-        <p className="rounded-full border border-[var(--stroke)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
-          Signed in as {username ?? "user"}
+      <div className="relative z-10 flex w-full items-center justify-end gap-3 px-6 pt-4">
+        <p className="rounded-full border border-[var(--stroke)] bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--gray-text)]">
+          {username ?? "user"}
         </p>
         <button
           type="button"
           onClick={handleLogout}
           disabled={isLoggingOut}
-          className="rounded-full bg-[var(--secondary-purple)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+          className="rounded-full bg-[var(--secondary-purple)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-white transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isLoggingOut ? "Logging out..." : "Log out"}
         </button>

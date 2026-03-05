@@ -7,14 +7,27 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  closestCorners,
+  pointerWithin,
+  closestCenter,
   type DragEndEvent,
   type DragStartEvent,
+  type DragOverEvent,
+  type CollisionDetection,
 } from "@dnd-kit/core";
 import { AIChatSidebar, createChatMessage, type ChatMessage } from "@/components/AIChatSidebar";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
-import { createId, moveCard, type BoardData } from "@/lib/kanban";
+import { createId, moveCard, type BoardData, type Column } from "@/lib/kanban";
+
+// Custom collision detection: use pointerWithin first (respects column boundaries),
+// fall back to closestCenter when pointer isn't inside any droppable.
+const columnAwareCollision: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) {
+    return pointerCollisions;
+  }
+  return closestCenter(args);
+};
 
 type BoardApiResponse = {
   board: BoardData;
@@ -36,6 +49,7 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
   const [board, setBoard] = useState<BoardData | null>(null);
   const [boardVersion, setBoardVersion] = useState<number | null>(null);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+  const [overCardId, setOverCardId] = useState<string | null>(null);
   const [isLoadingBoard, setIsLoadingBoard] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -45,6 +59,7 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
   const [chatInput, setChatInput] = useState("");
   const [isAiSubmitting, setIsAiSubmitting] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const boardVersionRef = useRef<number | null>(null);
   const pendingBoardRef = useRef<BoardData | null>(null);
@@ -171,9 +186,14 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
     setActiveCardId(event.active.id as string);
   };
 
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverCardId(event.over?.id as string | null);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveCardId(null);
+    setOverCardId(null);
 
     if (!over || active.id === over.id) {
       return;
@@ -183,6 +203,11 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
       ...previous,
       columns: moveCard(previous.columns, active.id as string, over.id as string),
     }));
+  };
+
+  const handleDragCancel = () => {
+    setActiveCardId(null);
+    setOverCardId(null);
   };
 
   const handleRenameColumn = (columnId: string, title: string) => {
@@ -283,8 +308,6 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
         setBoardVersion(data.version);
         setSaveError(null);
         if (pendingBoardRef.current) {
-          // Local changes were made while AI was responding — re-queue them
-          // against the new version so they aren't silently lost.
           void flushPendingSave();
         } else {
           setHasQueuedSaves(false);
@@ -331,96 +354,88 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
     );
   }
 
+  const statusText = isAiSubmitting
+    ? "AI request in progress..."
+    : isSaving
+    ? "Saving changes..."
+    : saveError
+      ? saveError
+      : "All changes saved";
+
   return (
     <div className="relative overflow-hidden">
       <div className="pointer-events-none absolute left-0 top-0 h-[420px] w-[420px] -translate-x-1/3 -translate-y-1/3 rounded-full bg-[radial-gradient(circle,_rgba(32,157,215,0.25)_0%,_rgba(32,157,215,0.05)_55%,_transparent_70%)]" />
       <div className="pointer-events-none absolute bottom-0 right-0 h-[520px] w-[520px] translate-x-1/4 translate-y-1/4 rounded-full bg-[radial-gradient(circle,_rgba(117,57,145,0.18)_0%,_rgba(117,57,145,0.05)_55%,_transparent_75%)]" />
 
-      <main className="relative mx-auto flex min-h-screen max-w-[1500px] flex-col gap-10 px-6 pb-16 pt-12">
-        <header className="flex flex-col gap-6 rounded-[32px] border border-[var(--stroke)] bg-white/80 p-8 shadow-[var(--shadow)] backdrop-blur">
-          <div className="flex flex-wrap items-start justify-between gap-6">
+      <main className="relative mx-auto flex min-h-screen flex-col gap-8 px-6 pb-16 pt-10">
+        <header className="flex items-center justify-between gap-6 rounded-2xl border border-[var(--stroke)] bg-white/80 px-8 py-5 shadow-[var(--shadow)] backdrop-blur">
+          <div className="flex items-center gap-8">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[var(--gray-text)]">
-                Single Board Kanban
-              </p>
-              <h1 className="mt-3 font-display text-4xl font-semibold text-[var(--navy-dark)]">
+              <h1 className="font-display text-2xl font-semibold text-[var(--navy-dark)]">
                 Kanban Studio
               </h1>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--gray-text)]">
-                Keep momentum visible. Rename columns, drag cards between stages,
-                and capture quick notes without getting buried in settings.
+              <p className="mt-1 text-xs text-[var(--gray-text)]">
+                {statusText}
               </p>
             </div>
-            <div className="rounded-2xl border border-[var(--stroke)] bg-[var(--surface)] px-5 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--gray-text)]">
-                Focus
-              </p>
-              <p className="mt-2 text-lg font-semibold text-[var(--primary-blue)]">
-                One board. Five columns. Zero clutter.
-              </p>
-              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
-                {isAiSubmitting
-                  ? "AI request in progress..."
-                  : isSaving
-                  ? "Saving changes..."
-                  : saveError
-                    ? saveError
-                    : "All changes saved"}
-              </p>
+            <div className="hidden items-center gap-2 md:flex">
+              {board.columns.map((column) => (
+                <div
+                  key={column.id}
+                  className="flex items-center gap-1.5 rounded-full border border-[var(--stroke)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--gray-text)]"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-yellow)]" />
+                  {column.title}
+                  <span className="ml-0.5 text-[var(--primary-blue)]">{column.cardIds.length}</span>
+                </div>
+              ))}
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            {board.columns.map((column) => (
-              <div
-                key={column.id}
-                className="flex items-center gap-2 rounded-full border border-[var(--stroke)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--navy-dark)]"
-              >
-                <span className="h-2 w-2 rounded-full bg-[var(--accent-yellow)]" />
-                {column.title}
-              </div>
-            ))}
           </div>
         </header>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <section className="grid gap-6 lg:grid-cols-5">
-              {board.columns.map((column) => (
-                <KanbanColumn
-                  key={column.id}
-                  column={column}
-                  cards={column.cardIds.map((cardId) => board.cards[cardId])}
-                  onRename={handleRenameColumn}
-                  onAddCard={handleAddCard}
-                  onDeleteCard={handleDeleteCard}
-                />
-              ))}
-            </section>
-            <DragOverlay>
-              {activeCard ? (
-                <div className="w-[260px]">
-                  <KanbanCardPreview card={activeCard} />
-                </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-
-          <AIChatSidebar
-            messages={chatMessages}
-            input={chatInput}
-            onInputChange={setChatInput}
-            onSubmit={() => void handleSubmitChat()}
-            isSubmitting={isAiSubmitting}
-            isBlocked={isSaving || hasQueuedSaves}
-            error={aiError}
-          />
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={columnAwareCollision}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <section className="grid auto-cols-fr grid-flow-col gap-4">
+            {board.columns.map((column) => (
+              <KanbanColumn
+                key={column.id}
+                column={column}
+                cards={column.cardIds.map((cardId) => board.cards[cardId])}
+                onRename={handleRenameColumn}
+                onAddCard={handleAddCard}
+                onDeleteCard={handleDeleteCard}
+                activeCardId={activeCardId}
+                overCardId={overCardId}
+              />
+            ))}
+          </section>
+          <DragOverlay dropAnimation={null}>
+            {activeCard ? (
+              <div className="w-[240px] cursor-grabbing">
+                <KanbanCardPreview card={activeCard} />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </main>
+
+      <AIChatSidebar
+        messages={chatMessages}
+        input={chatInput}
+        onInputChange={setChatInput}
+        onSubmit={() => void handleSubmitChat()}
+        isSubmitting={isAiSubmitting}
+        isBlocked={isSaving || hasQueuedSaves}
+        error={aiError}
+        isOpen={isChatOpen}
+        onToggle={() => setIsChatOpen((prev) => !prev)}
+      />
     </div>
   );
 };
