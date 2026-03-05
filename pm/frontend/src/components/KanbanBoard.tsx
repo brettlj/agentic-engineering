@@ -19,8 +19,6 @@ import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
 import { createId, moveCard, type BoardData, type Column } from "@/lib/kanban";
 
-// Custom collision detection: use pointerWithin first (respects column boundaries),
-// fall back to closestCenter when pointer isn't inside any droppable.
 const columnAwareCollision: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args);
   if (pointerCollisions.length > 0) {
@@ -44,6 +42,13 @@ type AIChatResponse = {
 type KanbanBoardProps = {
   onAuthExpired?: () => void;
 };
+
+const COLUMN_ACCENTS = [
+  "var(--copper)",
+  "var(--sage)",
+  "var(--ink-muted)",
+  "#6366F1",
+];
 
 export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
   const [board, setBoard] = useState<BoardData | null>(null);
@@ -324,8 +329,8 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
 
   if (isLoadingBoard) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--surface)]">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
+      <main className="flex min-h-screen items-center justify-center bg-[var(--cream)]">
+        <p className="font-display text-lg italic text-[var(--ink-muted)]">
           Loading board...
         </p>
       </main>
@@ -334,18 +339,18 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
 
   if (!board || loadError) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--surface)] px-4">
-        <section className="w-full max-w-lg rounded-3xl border border-[var(--stroke)] bg-white p-8 text-center shadow-[var(--shadow)]">
-          <h1 className="font-display text-3xl font-semibold text-[var(--navy-dark)]">
+      <main className="flex min-h-screen items-center justify-center bg-[var(--cream)] px-4">
+        <section className="w-full max-w-lg border border-[var(--rule-strong)] bg-[var(--paper)] p-10 text-center shadow-[var(--shadow-warm)]">
+          <h1 className="font-display text-3xl text-[var(--ink)]">
             Unable to load board
           </h1>
-          <p className="mt-3 text-sm text-[var(--gray-text)]">
+          <p className="mt-3 text-sm text-[var(--ink-muted)]">
             {loadError ?? "Unable to load board."}
           </p>
           <button
             type="button"
             onClick={() => void fetchBoard()}
-            className="mt-6 rounded-full bg-[var(--secondary-purple)] px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:brightness-110"
+            className="mt-6 bg-[var(--ink)] px-5 py-2.5 text-[11px] font-medium tracking-[0.2em] uppercase text-[var(--cream)] transition-colors hover:bg-[var(--ink-light)]"
           >
             Retry
           </button>
@@ -355,38 +360,38 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
   }
 
   const statusText = isAiSubmitting
-    ? "AI request in progress..."
+    ? "AI is thinking..."
     : isSaving
-    ? "Saving changes..."
+    ? "Saving..."
     : saveError
       ? saveError
-      : "All changes saved";
+      : "Saved";
 
   return (
     <div className="relative overflow-hidden">
-      <div className="pointer-events-none absolute left-0 top-0 h-[420px] w-[420px] -translate-x-1/3 -translate-y-1/3 rounded-full bg-[radial-gradient(circle,_rgba(32,157,215,0.25)_0%,_rgba(32,157,215,0.05)_55%,_transparent_70%)]" />
-      <div className="pointer-events-none absolute bottom-0 right-0 h-[520px] w-[520px] translate-x-1/4 translate-y-1/4 rounded-full bg-[radial-gradient(circle,_rgba(117,57,145,0.18)_0%,_rgba(117,57,145,0.05)_55%,_transparent_75%)]" />
-
-      <main className="relative mx-auto flex min-h-screen flex-col gap-8 px-6 pb-16 pt-10">
-        <header className="flex items-center justify-between gap-6 rounded-2xl border border-[var(--stroke)] bg-white/80 px-8 py-5 shadow-[var(--shadow)] backdrop-blur">
+      <main className="relative mx-auto flex min-h-screen flex-col gap-6 px-6 pb-16 pt-6">
+        <header className="flex items-center justify-between gap-6 border-b border-[var(--rule)] pb-5">
           <div className="flex items-center gap-8">
             <div>
-              <h1 className="font-display text-2xl font-semibold text-[var(--navy-dark)]">
+              <h1 className="font-display text-3xl text-[var(--ink)]">
                 Kanban Studio
               </h1>
-              <p className="mt-1 text-xs text-[var(--gray-text)]">
+              <p className="mt-1 text-[11px] font-medium tracking-[0.1em] uppercase text-[var(--ink-muted)]">
                 {statusText}
               </p>
             </div>
-            <div className="hidden items-center gap-2 md:flex">
-              {board.columns.map((column) => (
+            <div className="hidden items-center gap-3 md:flex">
+              {board.columns.map((column, index) => (
                 <div
                   key={column.id}
-                  className="flex items-center gap-1.5 rounded-full border border-[var(--stroke)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--gray-text)]"
+                  className="flex items-center gap-2 text-[11px] font-medium tracking-[0.1em] uppercase text-[var(--ink-muted)]"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-yellow)]" />
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: COLUMN_ACCENTS[index % COLUMN_ACCENTS.length] }}
+                  />
                   {column.title}
-                  <span className="ml-0.5 text-[var(--primary-blue)]">{column.cardIds.length}</span>
+                  <span className="font-bold text-[var(--ink-light)]">{column.cardIds.length}</span>
                 </div>
               ))}
             </div>
@@ -401,8 +406,8 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <section className="grid auto-cols-fr grid-flow-col gap-4">
-            {board.columns.map((column) => (
+          <section className="grid auto-cols-fr grid-flow-col gap-5">
+            {board.columns.map((column, index) => (
               <KanbanColumn
                 key={column.id}
                 column={column}
@@ -412,6 +417,7 @@ export const KanbanBoard = ({ onAuthExpired }: KanbanBoardProps = {}) => {
                 onDeleteCard={handleDeleteCard}
                 activeCardId={activeCardId}
                 overCardId={overCardId}
+                accentColor={COLUMN_ACCENTS[index % COLUMN_ACCENTS.length]}
               />
             ))}
           </section>

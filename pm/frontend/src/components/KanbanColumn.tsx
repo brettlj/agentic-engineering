@@ -14,13 +14,14 @@ type KanbanColumnProps = {
   onDeleteCard: (columnId: string, cardId: string) => void;
   activeCardId: string | null;
   overCardId: string | null;
+  accentColor: string;
 };
 
-const DropIndicator = () => (
+const DropIndicator = ({ color }: { color: string }) => (
   <div className="flex items-center gap-2 px-1">
-    <div className="h-2 w-2 rounded-full bg-[var(--primary-blue)]" />
-    <div className="h-0.5 flex-1 rounded-full bg-[var(--primary-blue)]" />
-    <div className="h-2 w-2 rounded-full bg-[var(--primary-blue)]" />
+    <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+    <div className="h-px flex-1" style={{ backgroundColor: color }} />
+    <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
   </div>
 );
 
@@ -32,6 +33,7 @@ export const KanbanColumn = memo(function KanbanColumn({
   onDeleteCard,
   activeCardId,
   overCardId,
+  accentColor,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
@@ -43,54 +45,57 @@ export const KanbanColumn = memo(function KanbanColumn({
     <section
       ref={setNodeRef}
       className={clsx(
-        "flex min-h-[520px] flex-col rounded-2xl border border-[var(--stroke)] bg-[var(--surface-strong)] p-3 shadow-[var(--shadow)] transition-all duration-200",
-        isHighlighted && "border-[var(--primary-blue)]/40 bg-[var(--primary-blue)]/[0.03]"
+        "flex min-h-[520px] flex-col bg-[var(--cream-dark)]/60 p-4 transition-all duration-200",
+        isHighlighted && "bg-[var(--copper-glow)]"
       )}
+      style={{
+        borderTop: `2px solid ${accentColor}`,
+      }}
       data-testid={`column-${column.id}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="w-full">
           <div className="flex items-center gap-2">
-            <div className="h-1.5 w-8 rounded-full bg-[var(--accent-yellow)]" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--gray-text)]">
-              {cards.length} cards
+            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[var(--ink-muted)]">
+              {cards.length} {cards.length === 1 ? "card" : "cards"}
             </span>
           </div>
           <input
             value={column.title}
             onChange={(event) => onRename(column.id, event.target.value)}
-            className="mt-2 w-full bg-transparent font-display text-base font-semibold text-[var(--navy-dark)] outline-none"
+            className="mt-1 w-full bg-transparent font-display text-xl text-[var(--ink)] outline-none"
             aria-label="Column title"
           />
         </div>
       </div>
-      <div className="mt-3 flex flex-1 flex-col gap-2">
+      <div className="mt-4 flex flex-1 flex-col gap-2.5">
         <SortableContext items={column.cardIds} strategy={verticalListSortingStrategy}>
           {cards.map((card) => (
             <div key={card.id}>
               {overCardId === card.id && activeCardId !== card.id && (
                 <div className="mb-2">
-                  <DropIndicator />
+                  <DropIndicator color={accentColor} />
                 </div>
               )}
               <KanbanCard
                 card={card}
                 onDelete={(cardId) => onDeleteCard(column.id, cardId)}
+                accentColor={accentColor}
               />
             </div>
           ))}
         </SortableContext>
         {isOver && isDragging && !isOverCardInThisColumn && (
           <div className="mt-1">
-            <DropIndicator />
+            <DropIndicator color={accentColor} />
           </div>
         )}
         {cards.length === 0 && (
           <div className={clsx(
-            "flex flex-1 items-center justify-center rounded-2xl border border-dashed px-3 py-6 text-center text-xs font-semibold uppercase tracking-[0.2em]",
+            "flex flex-1 items-center justify-center border border-dashed px-3 py-6 text-center text-[11px] font-medium tracking-[0.15em] uppercase",
             isHighlighted
-              ? "border-[var(--primary-blue)]/40 text-[var(--primary-blue)]"
-              : "border-[var(--stroke)] text-[var(--gray-text)]"
+              ? "border-[var(--copper)] text-[var(--copper)]"
+              : "border-[var(--rule-strong)] text-[var(--ink-muted)]"
           )}>
             Drop a card here
           </div>

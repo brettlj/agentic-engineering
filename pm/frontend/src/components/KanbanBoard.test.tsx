@@ -153,9 +153,9 @@ describe("KanbanBoard", () => {
     render(<KanbanBoard />);
     await screen.findAllByTestId(/column-/i);
 
-    const input = screen.getByLabelText("Ask AI assistant");
+    const input = screen.getByLabelText("Message");
     await userEvent.type(input, "Summarize priorities");
-    await userEvent.click(screen.getByRole("button", { name: /send to ai/i }));
+    await userEvent.click(screen.getByRole("button", { name: /send/i }));
 
     expect(await screen.findByText("Summarize priorities")).toBeInTheDocument();
     expect(await screen.findByText("No update needed.")).toBeInTheDocument();
@@ -166,9 +166,9 @@ describe("KanbanBoard", () => {
     render(<KanbanBoard />);
     await screen.findAllByTestId(/column-/i);
 
-    const input = screen.getByLabelText("Ask AI assistant");
+    const input = screen.getByLabelText("Message");
     await userEvent.type(input, "Please update the first column");
-    const sendButton = screen.getByRole("button", { name: /send to ai/i });
+    const sendButton = screen.getByRole("button", { name: /send/i });
     await userEvent.click(sendButton);
 
     expect(screen.getByRole("button", { name: /sending/i })).toBeDisabled();

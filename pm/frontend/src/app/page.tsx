@@ -77,8 +77,8 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--surface)]">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
+      <main className="flex min-h-screen items-center justify-center bg-[var(--cream)]">
+        <p className="font-display text-lg italic text-[var(--ink-muted)]">
           Checking session...
         </p>
       </main>
@@ -86,23 +86,33 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--surface)] px-4">
-      <section className="w-full max-w-md rounded-3xl border border-[var(--stroke)] bg-white p-8 shadow-[var(--shadow)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[var(--gray-text)]">
-          Project Management MVP
+    <main className="relative flex min-h-screen items-center justify-center bg-[var(--cream)] px-4 overflow-hidden">
+      {/* Decorative ruled lines */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 31px, var(--ink) 31px, var(--ink) 32px)",
+      }} />
+      {/* Copper margin line */}
+      <div className="pointer-events-none absolute top-0 bottom-0 left-[12%] w-px bg-[var(--copper)] opacity-[0.08]" />
+
+      <section className="relative w-full max-w-[400px] rounded-sm border border-[var(--rule-strong)] bg-[var(--paper)] px-10 py-12 shadow-[var(--shadow-warm)]">
+        {/* Top edge detail */}
+        <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-[var(--copper)] to-transparent opacity-40" />
+
+        <p className="text-[11px] font-medium tracking-[0.3em] uppercase text-[var(--ink-muted)]">
+          Kanban Studio
         </p>
-        <h1 className="mt-3 font-display text-3xl font-semibold text-[var(--navy-dark)]">
+        <h1 className="mt-4 font-display text-4xl text-[var(--ink)]">
           Sign in
         </h1>
-        <p className="mt-3 text-sm text-[var(--gray-text)]">
+        <p className="mt-3 text-sm text-[var(--ink-muted)] leading-relaxed">
           Use the MVP credentials to continue.
         </p>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <label className="block text-sm font-medium text-[var(--navy-dark)]">
+        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+          <label className="block text-xs font-medium tracking-[0.1em] uppercase text-[var(--ink-light)]">
             Username
             <input
-              className="mt-2 w-full rounded-xl border border-[var(--stroke)] px-3 py-2 text-sm text-[var(--navy-dark)] outline-none focus:border-[var(--primary-blue)]"
+              className="mt-2 w-full border-b border-[var(--rule-strong)] bg-transparent px-0 py-2 text-sm text-[var(--ink)] outline-none transition-colors focus:border-[var(--copper)] placeholder:text-[var(--ink-muted)]/40"
               name="username"
               autoComplete="username"
               value={username}
@@ -111,10 +121,10 @@ export default function Home() {
             />
           </label>
 
-          <label className="block text-sm font-medium text-[var(--navy-dark)]">
+          <label className="block text-xs font-medium tracking-[0.1em] uppercase text-[var(--ink-light)]">
             Password
             <input
-              className="mt-2 w-full rounded-xl border border-[var(--stroke)] px-3 py-2 text-sm text-[var(--navy-dark)] outline-none focus:border-[var(--primary-blue)]"
+              className="mt-2 w-full border-b border-[var(--rule-strong)] bg-transparent px-0 py-2 text-sm text-[var(--ink)] outline-none transition-colors focus:border-[var(--copper)] placeholder:text-[var(--ink-muted)]/40"
               type="password"
               name="password"
               autoComplete="current-password"
@@ -125,13 +135,13 @@ export default function Home() {
           </label>
 
           {error ? (
-            <p className="text-sm font-semibold text-[var(--secondary-purple)]">{error}</p>
+            <p className="text-sm font-medium text-[#B91C1C]">{error}</p>
           ) : null}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-full bg-[var(--secondary-purple)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-2 w-full bg-[var(--ink)] px-4 py-3 text-[11px] font-medium tracking-[0.25em] uppercase text-[var(--cream)] transition-all hover:bg-[var(--ink-light)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "Signing in..." : "Sign in"}
           </button>

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Manrope, Space_Grotesk } from "next/font/google";
+import { DM_Sans, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
-const displayFont = Space_Grotesk({
+const displayFont = Instrument_Serif({
   variable: "--font-display",
   subsets: ["latin"],
+  weight: "400",
 });
 
-const bodyFont = Manrope({
+const bodyFont = DM_Sans({
   variable: "--font-body",
   subsets: ["latin"],
 });

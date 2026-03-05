@@ -64,9 +64,9 @@ export default function BoardPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--surface)]">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
-          Checking session...
+      <main className="flex min-h-screen items-center justify-center bg-[var(--cream)]">
+        <p className="font-display text-lg italic text-[var(--ink-muted)]">
+          Loading...
         </p>
       </main>
     );
@@ -75,14 +75,14 @@ export default function BoardPage() {
   return (
     <div>
       <div className="relative z-10 flex w-full items-center justify-end gap-3 px-6 pt-4">
-        <p className="rounded-full border border-[var(--stroke)] bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--gray-text)]">
+        <p className="border-b border-[var(--rule)] px-1 py-1 text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--ink-muted)]">
           {username ?? "user"}
         </p>
         <button
           type="button"
           onClick={handleLogout}
           disabled={isLoggingOut}
-          className="rounded-full bg-[var(--secondary-purple)] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-white transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+          className="bg-[var(--ink)] px-3 py-1.5 text-[10px] font-medium tracking-[0.2em] uppercase text-[var(--cream)] transition-colors hover:bg-[var(--ink-light)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoggingOut ? "Logging out..." : "Log out"}
         </button>

@@ -7,9 +7,10 @@ import type { Card } from "@/lib/kanban";
 type KanbanCardProps = {
   card: Card;
   onDelete: (cardId: string) => void;
+  accentColor: string;
 };
 
-export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
+export const KanbanCard = ({ card, onDelete, accentColor }: KanbanCardProps) => {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
@@ -24,20 +25,26 @@ export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
       ref={setNodeRef}
       style={style}
       className={clsx(
-        "group rounded-2xl border border-transparent bg-white px-4 py-4 shadow-[0_12px_24px_rgba(3,33,71,0.08)]",
-        "transition-all duration-150",
-        isDragging && "opacity-30 ring-2 ring-[var(--primary-blue)]/30 ring-dashed"
+        "group relative bg-[var(--paper)] px-4 py-3.5 shadow-[0_1px_3px_rgba(28,25,23,0.06)]",
+        "transition-all duration-150 hover:shadow-[var(--shadow-warm)]",
+        isDragging && "opacity-30"
       )}
       {...attributes}
       {...listeners}
       data-testid={`card-${card.id}`}
     >
-      <div className="flex items-start justify-between gap-3">
+      {/* Left accent bar */}
+      <div
+        className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full opacity-50 transition-opacity group-hover:opacity-100"
+        style={{ backgroundColor: accentColor }}
+      />
+
+      <div className="flex items-start justify-between gap-3 pl-2">
         <div className="min-w-0 flex-1">
-          <h4 className="font-display text-base font-semibold text-[var(--navy-dark)]">
+          <h4 className="text-sm font-medium text-[var(--ink)]">
             {card.title}
           </h4>
-          <p className="mt-2 text-sm leading-6 text-[var(--gray-text)]">
+          <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--ink-muted)]">
             {card.details}
           </p>
         </div>
@@ -46,7 +53,7 @@ export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
             <button
               type="button"
               onClick={() => onDelete(card.id)}
-              className="rounded-full border border-red-300 bg-red-50 px-2 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+              className="border border-[#B91C1C]/20 bg-[#B91C1C]/5 px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-[#B91C1C] transition hover:bg-[#B91C1C]/10"
               aria-label={`Confirm delete ${card.title}`}
             >
               Yes
@@ -54,7 +61,7 @@ export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
             <button
               type="button"
               onClick={() => setConfirmingDelete(false)}
-              className="rounded-full border border-[var(--stroke)] px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:text-[var(--navy-dark)]"
+              className="border border-[var(--rule)] px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-[var(--ink-muted)] transition hover:text-[var(--ink)]"
             >
               No
             </button>
@@ -63,7 +70,7 @@ export const KanbanCard = ({ card, onDelete }: KanbanCardProps) => {
           <button
             type="button"
             onClick={() => setConfirmingDelete(true)}
-            className="flex-shrink-0 rounded-lg p-1.5 text-[var(--gray-text)] opacity-0 transition group-hover:opacity-100 hover:bg-red-50 hover:text-red-500"
+            className="flex-shrink-0 p-1.5 text-[var(--ink-muted)] opacity-0 transition group-hover:opacity-100 hover:text-[#B91C1C]"
             aria-label={`Delete ${card.title}`}
           >
             <svg

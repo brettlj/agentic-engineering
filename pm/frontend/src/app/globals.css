@@ -1,20 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --accent-yellow: #ecad0a;
-  --primary-blue: #209dd7;
-  --secondary-purple: #753991;
-  --navy-dark: #032147;
-  --gray-text: #888888;
-  --surface: #f7f8fb;
-  --surface-strong: #ffffff;
-  --stroke: rgba(3, 33, 71, 0.08);
-  --shadow: 0 18px 40px rgba(3, 33, 71, 0.12);
+  --ink: #1C1917;
+  --ink-light: #44403C;
+  --ink-muted: #78716C;
+  --cream: #FAF8F5;
+  --cream-dark: #F5F0EB;
+  --paper: #FFFDF9;
+  --copper: #B45309;
+  --copper-light: #D97706;
+  --copper-glow: rgba(180, 83, 9, 0.12);
+  --sage: #65785A;
+  --sage-light: #8A9F7E;
+  --rule: rgba(28, 25, 23, 0.08);
+  --rule-strong: rgba(28, 25, 23, 0.15);
+  --shadow-warm: 0 1px 3px rgba(28, 25, 23, 0.06), 0 8px 24px rgba(28, 25, 23, 0.08);
+  --shadow-lifted: 0 4px 12px rgba(28, 25, 23, 0.08), 0 20px 40px rgba(28, 25, 23, 0.12);
+  --sidebar-bg: #1C1917;
+  --sidebar-surface: #292524;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-text: #E7E5E4;
+  --sidebar-muted: #A8A29E;
 }
 
 @theme inline {
-  --color-background: var(--surface);
-  --color-foreground: var(--navy-dark);
+  --color-background: var(--cream);
+  --color-foreground: var(--ink);
   --font-sans: var(--font-body);
 }
 
@@ -23,12 +34,25 @@
 }
 
 body {
-  background: var(--surface);
-  color: var(--navy-dark);
+  background: var(--cream);
+  color: var(--ink);
   font-family: var(--font-body), "Segoe UI", sans-serif;
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-display {
-  font-family: var(--font-display), "Segoe UI", sans-serif;
+  font-family: var(--font-display), Georgia, serif;
+}
+
+::selection {
+  background: var(--copper-glow);
+  color: var(--ink);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-muted);
+  opacity: 0.6;
 }
