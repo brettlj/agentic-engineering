@@ -15,6 +15,7 @@ def test_start_stop_scripts_exist_for_linux_and_mac() -> None:
 
 def test_start_scripts_use_docker_compose() -> None:
     root = Path(__file__).resolve().parents[2]
-    for relpath in ["scripts/start-linux.sh", "scripts/start-mac.sh"]:
-        content = (root / relpath).read_text(encoding="utf-8")
-        assert "docker compose up -d --build" in content
+    # Shared script contains the actual docker compose command;
+    # platform wrappers delegate to it.
+    content = (root / "scripts/start.sh").read_text(encoding="utf-8")
+    assert "docker compose up -d --build" in content

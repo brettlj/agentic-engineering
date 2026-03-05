@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from backend.app.board import BoardPayload, DEFAULT_BOARD
+from backend.app.models.board import BoardPayload, DEFAULT_BOARD
 
 
 def test_board_payload_accepts_default_board() -> None:

@@ -1,3 +1,17 @@
+"""Session-based authentication and credential management.
+
+This module provides the building blocks for the app's auth system:
+
+- Credential validation using constant-time comparison (hmac.compare_digest)
+  to prevent timing attacks.
+- An in-memory session store where each session maps a random token to a
+  username and creation timestamp.
+- Session expiry (TTL) and a cap on maximum active sessions to bound memory.
+- Per-IP login rate limiting to slow down brute-force attempts.
+
+The actual route handlers that use these functions live in routers/auth.py.
+"""
+
 from __future__ import annotations
 
 import hmac

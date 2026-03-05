@@ -1,4 +1,12 @@
-"""System prompts for AI chat modes."""
+"""System prompts for AI chat modes.
+
+These long instruction strings are sent as the "system" message to the LLM.
+They tell the AI how to behave, what JSON shape to return, and what rules
+to follow when modifying the board.
+
+Keeping prompts in a dedicated module (rather than inline in ai.py) makes
+them easier to read, edit, and test independently.
+"""
 
 BOARD_SNAPSHOT_SYSTEM_PROMPT = (
     "You are an assistant for a kanban board application. "

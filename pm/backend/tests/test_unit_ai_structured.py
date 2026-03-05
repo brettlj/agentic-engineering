@@ -12,7 +12,7 @@ from backend.app.ai import (
     _normalize_structured_response,
     build_board_chat_messages,
 )
-from backend.app.board import BoardPayload, DEFAULT_BOARD
+from backend.app.models.board import BoardPayload, DEFAULT_BOARD
 
 
 def test_structured_response_accepts_no_update_payload() -> None:

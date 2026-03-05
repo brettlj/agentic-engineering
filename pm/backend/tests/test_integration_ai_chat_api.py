@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from backend.app.ai import OpenRouterClientError, StructuredAIResponse
-from backend.app.board import BoardPayload
+from backend.app.models.board import BoardPayload
 from backend.app.main import create_app
 
 

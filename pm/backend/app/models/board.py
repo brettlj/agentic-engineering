@@ -1,6 +1,17 @@
+"""Domain models for the Kanban board.
+
+These models represent the core data structures of the application.
+BoardPayload is the central type — it describes a complete board snapshot
+with columns and cards, and includes validation rules that enforce
+structural integrity (no orphaned cards, no missing references, etc.).
+
+DEFAULT_BOARD provides the initial board state for new users.
+"""
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field, model_validator
+
 
 DEFAULT_BOARD: dict = {
     "columns": [
@@ -56,18 +67,32 @@ DEFAULT_BOARD: dict = {
 
 
 class CardPayload(BaseModel):
+    """A single Kanban card with a unique ID, title, and details text."""
+
     id: str = Field(min_length=1)
     title: str = Field(min_length=1)
     details: str
 
 
 class ColumnPayload(BaseModel):
+    """A board column that holds an ordered list of card IDs."""
+
     id: str = Field(min_length=1)
     title: str = Field(min_length=1)
     cardIds: list[str]
 
 
 class BoardPayload(BaseModel):
+    """A complete board snapshot: ordered columns plus a card lookup dict.
+
+    The model_validator enforces several structural invariants:
+    - At least one column must exist.
+    - Column IDs must be unique.
+    - Every card ID referenced in a column must exist in the cards dict.
+    - The cards dict key must match the card's own id field.
+    - Every card must appear in at least one column (no orphans).
+    """
+
     columns: list[ColumnPayload]
     cards: dict[str, CardPayload]
 
@@ -99,10 +124,16 @@ class BoardPayload(BaseModel):
 
 
 class BoardUpdateRequest(BaseModel):
+    """PUT /api/board request body — a board snapshot plus the expected version
+    for optimistic concurrency control.
+    """
+
     board: BoardPayload
     expected_version: int | None = Field(default=None, ge=1)
 
 
 class BoardResponse(BaseModel):
+    """Standard response for board endpoints — the board plus its version number."""
+
     board: BoardPayload
     version: int

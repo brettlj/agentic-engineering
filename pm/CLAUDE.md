@@ -44,16 +44,21 @@ npm --prefix frontend run lint
 3. Auth is cookie-based session (in-memory dict on `app.state.sessions`)
 4. Board data persists in SQLite at `data/pm.sqlite` (auto-created)
 
-### Backend (`backend/app/`)
-- `main.py` — FastAPI app factory (`create_app()`). All routes defined here. The module-level `app = create_app()` is what uvicorn runs. Routes: `/health`, `/api/hello`, `/api/auth/*`, `/api/board` (GET/PUT), `/api/ai/connectivity`, `/api/ai/chat`.
-- `board.py` — Pydantic models (`CardPayload`, `ColumnPayload`, `BoardPayload`) with validation (no orphaned cards, unique IDs, every `cardIds` entry must exist in `cards`). Default board state defined here.
-- `ai.py` — `OpenRouterClient` wraps OpenRouter API (via stdlib `urllib`, no extra HTTP library). Two chat modes: `board_snapshot` (AI returns full board JSON) and `operation` (AI returns a structured operation that the backend applies). `OpenRouterConfig.from_env()` reads all config from environment.
-- `db.py` — SQLite read/write with optimistic locking via version numbers. `BoardVersionConflict` raised on conflict → 409 response.
-- `auth.py` — Session token generation/validation. MVP credentials hardcoded.
+### Backend (`backend/app/`) — Router / Service / Repository pattern
+- `main.py` — Slim app factory (`create_app()`). Attaches shared state, includes routers, mounts static files. `app = create_app()` is what uvicorn runs.
+- `dependencies.py` — FastAPI `Depends()` functions and `Annotated` type aliases (`CurrentUser`, `DbPath`, `AIClient`, etc.) used by all routers.
+- `routers/` — Thin route handlers grouped by domain: `health.py`, `auth.py`, `board.py`, `ai.py`. Each defines an `APIRouter` with a prefix and tags.
+- `services/` — Business logic orchestration: `board_service.py` (read/write board), `ai_service.py` (read board + call LLM + persist update).
+- `repositories/board_repo.py` — SQLite access with optimistic locking via version numbers. `BoardVersionConflict` raised on conflict → 409 response.
+- `models/board.py` — Domain models (`CardPayload`, `ColumnPayload`, `BoardPayload`) with validation. Default board state.
+- `models/api.py` — API request/response schemas (`LoginRequest`, `AIChatRequest`, `AIChatResponse`, etc.).
+- `ai.py` — `OpenRouterClient` wraps OpenRouter API (via stdlib `urllib`). Two chat modes: `board_snapshot` and `operation`.
+- `auth.py` — Session management, credential validation, rate limiting.
+- `prompts.py` — LLM system prompt constants.
 
 ### AI chat modes
-- **`board_snapshot`** (default): AI returns `{assistant_message, should_update_board, board_update}` where `board_update` is the full board JSON. Retries once on invalid output.
-- **`operation`**: AI returns `{assistant_message, should_update_board, operation}` where `operation` describes a single mutation (intent + fields). Backend applies the operation to current board state. Retries up to 3 times.
+- **`operation`** (default, recommended): AI returns `{assistant_message, should_update_board, operation}` where `operation` describes a single mutation (intent + fields). Backend applies the operation to current board state. Retries up to 3 times.
+- **`board_snapshot`**: AI returns `{assistant_message, should_update_board, board_update}` where `board_update` is the full board JSON. Maintained for compatibility but not recommended.
 
 ### Frontend (`frontend/src/`)
 - Next.js 16 with React 19, Tailwind CSS v4, dnd-kit for drag-and-drop

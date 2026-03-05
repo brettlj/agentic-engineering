@@ -1,3 +1,21 @@
+"""OpenRouter LLM client and structured response handling.
+
+This module wraps the OpenRouter API (an LLM gateway) and provides two
+chat modes for the Kanban AI assistant:
+
+- **board_snapshot**: The LLM returns a complete board JSON, which the
+  backend validates and persists as-is.
+- **operation**: The LLM returns a structured operation (e.g., "create_card"
+  with parameters), and the backend applies the mutation server-side. This
+  mode is more reliable and is the recommended default.
+
+Key classes:
+- OpenRouterConfig: Reads all configuration from environment variables.
+- OpenRouterClient: Sends requests to OpenRouter and parses responses.
+- StructuredAIResponse: The normalized result that callers receive,
+  regardless of which chat mode was used.
+"""
+
 from __future__ import annotations
 
 import json
@@ -9,7 +27,7 @@ from urllib import error, request
 
 from pydantic import BaseModel, Field, ValidationError
 
-from backend.app.board import BoardPayload, CardPayload
+from backend.app.models.board import BoardPayload, CardPayload
 from backend.app.prompts import BOARD_SNAPSHOT_SYSTEM_PROMPT, OPERATION_SYSTEM_PROMPT
 
 OPENROUTER_CHAT_COMPLETIONS_URL = "https://openrouter.ai/api/v1/chat/completions"
