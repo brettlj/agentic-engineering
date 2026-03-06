@@ -1,0 +1,3 @@
+[submodule "prelegal"]
+	path = prelegal
+	url = https://github.com/ed-donner/prelegal.git
